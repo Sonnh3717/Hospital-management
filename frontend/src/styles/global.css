@@ -1,0 +1,20 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #18243b;
+  background: #f3f6fa;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: #2157ad; }
+.site-header { padding: 1.25rem 2rem; background: white; border-bottom: 1px solid #dae1eb; }
+.site-header a { font-weight: 700; text-decoration: none; }
+.page-container { max-width: 56rem; margin: 4rem auto; padding: 0 1.25rem; }
+.starter-card { padding: clamp(1.5rem, 5vw, 3rem); border: 1px solid #dae1eb; border-radius: 1rem; background: white; }
+.eyebrow { color: #546781; font-size: .8rem; letter-spacing: .12em; }
+h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: 700; margin: .75rem 0; }
+p { line-height: 1.7; margin: 1rem 0; }
+button { background: #2157ad; color: white; padding: .75rem 1rem; border: 0; border-radius: .5rem; font: inherit; cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, a:focus-visible { outline: 3px solid #f6ac43; outline-offset: 4px; }
+

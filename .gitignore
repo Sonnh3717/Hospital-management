@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+target/
+build/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+application-local.properties
+*.local
+*.log
+
+# Editor and OS files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
+
