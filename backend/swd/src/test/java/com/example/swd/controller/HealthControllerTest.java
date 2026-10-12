@@ -3,11 +3,13 @@ package com.example.swd.controller;
 import com.example.swd.config.WebConfig;
 import com.example.swd.security.SecurityConfig;
 import com.example.swd.service.SystemStatusService;
+import com.example.swd.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
@@ -16,6 +18,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(HealthController.class)
 @Import({SystemStatusService.class, SecurityConfig.class, WebConfig.class})
 class HealthControllerTest {
+    @MockitoBean
+    private AuthService auth;
+
     @Autowired
     private MockMvc mvc;
 
@@ -29,7 +34,7 @@ class HealthControllerTest {
     @Test
     void otherEndpointsAreNotPublicByDefault() throws Exception {
         mvc.perform(get("/api/private"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

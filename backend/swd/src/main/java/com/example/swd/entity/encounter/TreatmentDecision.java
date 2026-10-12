@@ -45,6 +45,9 @@ public class TreatmentDecision extends AuditedEntity {
     @Column(name = "decision_text", nullable = false, columnDefinition = "TEXT")
     private String decisionText;
 
+    @Column(name = "follow_up_required", nullable = false)
+    private Boolean followUpRequired = false;
+
     @Column(name = "instructions", columnDefinition = "TEXT")
     private String instructions;
 }
