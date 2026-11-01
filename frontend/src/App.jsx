@@ -8,12 +8,19 @@ import AssignedPatientsPage from './pages/doctor/AssignedPatientsPage.jsx';
 import ClinicalEncounterPage from './pages/doctor/ClinicalEncounterPage.jsx';
 import ServiceQueuePage from './pages/medicalservice/ServiceQueuePage.jsx';
 import ServiceRequestPage from './pages/medicalservice/ServiceRequestPage.jsx';
+import RegisterPage from './pages/auth/RegisterPage.jsx';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
 
 export default function App() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
         <Route index element={<HomePage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="verify" element={<VerifyEmailPage />} />
+        <Route path="verify-email" element={<VerifyEmailPage />} />
+        <Route path="login" element={<LoginPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       <Route element={<ProtectedWorkspace role="RECEPTIONIST" />}>

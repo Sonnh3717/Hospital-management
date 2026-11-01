@@ -15,9 +15,9 @@ const navigation = [
 
 function Brand({ footer = false }) {
   return (
-    <a
+    <Link
       className={`site-brand${footer ? ' site-brand--footer' : ''}`}
-      href="#gioi-thieu"
+      to="/"
       aria-label="SWD Care — Trang chủ"
     >
       <span className="site-brand__mark" aria-hidden="true">
@@ -29,7 +29,7 @@ function Brand({ footer = false }) {
         </span>
         <span className="site-brand__tagline">HỆ THỐNG CHĂM SÓC SỨC KHỎE</span>
       </span>
-    </a>
+    </Link>
   );
 }
 
@@ -68,7 +68,7 @@ export default function MainLayout() {
           <div className="layout-container site-utility__inner">
             <span>Chăm sóc tận tâm. Đồng hành cùng bạn.</span>
             <div className="site-utility__links">
-              <a href="#bac-si">Tìm bác sĩ</a>
+              <a href="/#bac-si">Tìm bác sĩ</a>
               <span aria-hidden="true" />
               <a href="#lien-he">Hỗ trợ khách hàng</a>
             </div>
@@ -87,6 +87,11 @@ export default function MainLayout() {
               <Icon name="globe" size={17} /> VI
             </span>
             <span className="site-header__divider" aria-hidden="true" />
+            {!user && (
+              <Link className="site-register" to="/register">
+                Đăng ký
+              </Link>
+            )}
             {user && destinations[user.role] && (
               <Link className="site-login" to={destinations[user.role]}>
                 Vào không gian làm việc
@@ -118,6 +123,23 @@ export default function MainLayout() {
             </button>
           </div>
         </div>
+        {user && (
+          <div className="site-account-summary">
+            <div className="layout-container">
+              <Icon name="user" size={17} />
+              <span>{user.fullName}</span>
+              <small>
+                {user.role === 'PATIENT'
+                  ? 'Tài khoản người bệnh'
+                  : user.role === 'DOCTOR'
+                    ? 'Bác sĩ'
+                    : user.role === 'RECEPTIONIST'
+                      ? 'Lễ tân'
+                      : 'Nhân viên dịch vụ y tế'}
+              </small>
+            </div>
+          </div>
+        )}
         <nav
           id="primary-navigation"
           className={`site-nav${menuOpen ? ' site-nav--open' : ''}`}
@@ -125,13 +147,22 @@ export default function MainLayout() {
         >
           <div className="layout-container site-nav__inner">
             {navigation.map(({ href, label }) => (
-              <a key={href} href={href} onClick={() => setMenuOpen(false)}>
+              <a key={href} href={`/${href}`} onClick={() => setMenuOpen(false)}>
                 {label}
               </a>
             ))}
+            {!user && (
+              <Link
+                className="site-nav__register"
+                to="/register"
+                onClick={() => setMenuOpen(false)}
+              >
+                Đăng ký tài khoản
+              </Link>
+            )}
             <a
               className="site-nav__appointment"
-              href="#dat-lich"
+              href="/#dat-lich"
               onClick={() => setMenuOpen(false)}
             >
               <Icon name="calendar" size={18} /> Đặt lịch ngay{' '}
@@ -166,13 +197,13 @@ export default function MainLayout() {
           </div>
           <div className="site-footer__column">
             <h2>Khám phá SWD Care</h2>
-            <a href="#gioi-thieu">Về chúng tôi</a>
-            <a href="#chuyen-khoa">Các chuyên khoa</a>
-            <a href="#bac-si">Đội ngũ bác sĩ</a>
+            <a href="/#gioi-thieu">Về chúng tôi</a>
+            <a href="/#chuyen-khoa">Các chuyên khoa</a>
+            <a href="/#bac-si">Đội ngũ bác sĩ</a>
           </div>
           <div className="site-footer__column">
             <h2>Dành cho người bệnh</h2>
-            <a href="#dat-lich">Đặt lịch khám</a>
+            <a href="/#dat-lich">Đặt lịch khám</a>
             <a href="#lien-he">Thông tin liên hệ</a>
             <p>Hãy chuẩn bị thông tin cá nhân trước khi đặt lịch khám.</p>
           </div>

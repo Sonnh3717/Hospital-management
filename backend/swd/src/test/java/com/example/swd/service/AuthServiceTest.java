@@ -4,12 +4,16 @@ import com.example.swd.dto.request.LoginRequest;
 import com.example.swd.entity.common.enums.ActiveStatus;
 import com.example.swd.entity.identity.AuthSession;
 import com.example.swd.entity.identity.Role;
+import com.example.swd.entity.identity.RegistrationVerification;
+import com.example.swd.entity.patient.Patient;
 import com.example.swd.entity.identity.UserAccount;
 import com.example.swd.entity.staff.HospitalStaff;
 import com.example.swd.exception.WorkflowException;
 import com.example.swd.repository.AuthSessionRepository;
 import com.example.swd.repository.DoctorProfileRepository;
 import com.example.swd.repository.HospitalStaffRepository;
+import com.example.swd.repository.PatientRepository;
+import com.example.swd.repository.RegistrationVerificationRepository;
 import com.example.swd.repository.UserAccountRepository;
 import com.example.swd.security.StaffPrincipal;
 import java.time.LocalDateTime;
@@ -34,6 +38,8 @@ class AuthServiceTest {
     @Mock AuthSessionRepository sessions;
     @Mock HospitalStaffRepository staff;
     @Mock DoctorProfileRepository doctors;
+    @Mock PatientRepository patients;
+    @Mock RegistrationVerificationRepository verifications;
     AuthService auth;
     UserAccount account;
     HospitalStaff employee;
@@ -41,7 +47,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setup() {
-        auth = new AuthService(accounts, sessions, staff, doctors, encoder, 8);
+        auth = new AuthService(accounts, sessions, staff, doctors, patients, verifications, encoder, 8);
         Role role = new Role(); role.setRoleCode(Role.RoleCode.RECEPTIONIST);
         account = new UserAccount(); account.setId(10L); account.setUsername("reception");
         account.setRole(role); account.setPasswordHash(encoder.encode("correct-password"));
@@ -108,6 +114,35 @@ class AuthServiceTest {
     void malformedSessionTokenNeverQueriesDatabase() {
         assertThrows(WorkflowException.class, () -> auth.authenticate("1-1-1-1-1"));
         verifyNoInteractions(sessions);
+    }
+
+    @Test void activePatientCanLoginWithoutStaffProfile() {
+        account.getRole().setRoleCode(Role.RoleCode.PATIENT);
+        Patient patient = new Patient(); patient.setId(30L); patient.setUserAccount(account); patient.setFullName("Người bệnh Demo");
+        when(accounts.findForLogin("reception")).thenReturn(Optional.of(account));
+        when(patients.findByUserAccount_Id(10L)).thenReturn(Optional.of(patient));
+        var reply = auth.login(new LoginRequest("reception", "correct-password"));
+        assertEquals("PATIENT", reply.user().role()); assertNull(reply.user().staffId()); assertEquals(30L, reply.user().patientId());
+        verifyNoInteractions(staff, doctors);
+    }
+
+    @Test void pendingPatientCannotLoginBeforeEmailVerification() {
+        account.getRole().setRoleCode(Role.RoleCode.PATIENT); account.setStatus(ActiveStatus.INACTIVE);
+        RegistrationVerification pending = new RegistrationVerification(); pending.setUserAccount(account);
+        when(accounts.findForLogin("reception")).thenReturn(Optional.of(account));
+        when(verifications.findById(10L)).thenReturn(Optional.of(pending));
+        assertEquals("EMAIL_NOT_VERIFIED", assertThrows(WorkflowException.class,
+                () -> auth.login(new LoginRequest("reception", "correct-password"))).getCode());
+        verify(sessions, never()).saveAndFlush(any()); verifyNoInteractions(patients, staff);
+    }
+
+    @Test void missingOrOverlongPasswordIsRejectedSafelyBeforeLookup() {
+        for (String password : new String[]{null, " ", "secret".repeat(30)}) {
+            var error = assertThrows(WorkflowException.class, () -> auth.login(new LoginRequest("reception", password)));
+            assertEquals(400, error.getStatus().value()); assertTrue(error.getFieldErrors().containsKey("password"));
+            assertFalse(error.getMessage().contains("secret"));
+        }
+        verifyNoInteractions(accounts, sessions, staff);
     }
 
     private AuthSession validSession() {

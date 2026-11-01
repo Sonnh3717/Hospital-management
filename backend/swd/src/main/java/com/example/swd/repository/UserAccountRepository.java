@@ -20,4 +20,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserAccount u where u.id = :id")
     Optional<UserAccount> lockById(Long id);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserAccount u where u.loginEmail = :email")
+    Optional<UserAccount> lockByLoginEmail(String email);
 }

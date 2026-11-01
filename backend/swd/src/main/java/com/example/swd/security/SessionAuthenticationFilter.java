@@ -17,6 +17,8 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getMethod().equals("OPTIONS") || request.getRequestURI().equals("/api/auth/login")
+                || request.getRequestURI().equals("/api/auth/register") || request.getRequestURI().equals("/api/auth/send-otp")
+                || request.getRequestURI().equals("/api/auth/verify-otp") || request.getRequestURI().equals("/api/auth/check-username")
                 || request.getRequestURI().equals("/api/health");
     }
 

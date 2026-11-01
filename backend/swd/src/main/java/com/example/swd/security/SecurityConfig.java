@@ -31,7 +31,8 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, exception) -> SecurityResponses.forbidden(response)))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username").permitAll()
                         .requestMatchers("/api/auth/me", "/api/auth/logout").authenticated()
                         .requestMatchers("/api/reception/**").hasRole("RECEPTIONIST")
                         .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
