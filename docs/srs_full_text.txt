@@ -1,0 +1,669 @@
+﻿ SOFTWARE ARCHITECTURE AND DESIGN
+REPORT 1
+Project Overview and
+Software Requirement Specification
+â€“ Hanoi, Sep 2026 â€“
+Table of Contents
+Record of Changes
+--- TABLE START ---
+Date | A*M, D | In charge | Change Description
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+ |  |  | 
+--- TABLE END ---
+
+*A - Added M - Modified D - Deleted
+I. Project Overview
+1.1. Project Information
+English name: Dermatology Hospital Booking and Medical Service Management System 
+Vietnamese name: Há»‡ thá»‘ng quáº£n lÃ½ Ä‘áº·t lá»‹ch vÃ  dá»‹ch vá»¥ y táº¿ cho bá»‡nh viá»‡n Da liá»…u
+Team name: SE1976-JS(AD) - Group 1
+Software type: Website
+1.2. Project Team
+--- TABLE START ---
+StudentID | Full Name | Role | Email
+HE190512 | Nguyá»…n Tuáº¥n Nam | Leader | namnguyen170681@gmail.com
+HE190862 | Nguyá»…n Hiáº¿u SÆ¡n | Member | nguyenhieuson6@gmail.com
+HE181473 | TrÆ°Æ¡ng KhÃ¡nh ÄÃ´ng | Member | dongtkhe181473@fpt.edu.vn
+HE190123 | HÃ Quá»‘c Trung | Member | chishidotoji2k3@gmail.com
+--- TABLE END ---
+
+1.3. Product Background
+ Outpatient healthcare services involve multiple activities that must be coordinated throughout a patientâ€™s visit, including appointment scheduling, patient reception, clinical examination, medical record management, medical service requests and results, and follow-up activities. These activities involve different hospital roles such as patients, receptionists, doctors, medical service staff, managers, and administrators. When these activities are managed through disconnected processes or systems, information may not be consistently available to the appropriate staff at the time it is needed, making it more difficult to coordinate patient care and monitor daily operations.
+The need for a new system arises from the requirement to provide an integrated platform for managing outpatient appointments and medical services. Patients need a convenient way to register and manage appointments, access relevant medical information, and make payments for applicable services. Receptionists need to support appointment reception and patient check-in, while doctors need access to assigned patients and medical records, documentation of clinical encounters, and the ability to request medical services. Medical service staff need to manage service queues and record service results. Managers require information about staff schedules, appointments, operational performance, and patient feedback to support day-to-day management and reporting.
+The proposed Hospital Appointment & Medical Service Management System is therefore intended to integrate these related activities into a single system. The system will support the coordination of outpatient appointments and reception, clinical records and encounters, medical service requests and results, staff scheduling and schedule-change requests, operational reporting, patient feedback, and service-related payments. The system is designed to provide each role with access to the functions and information relevant to its responsibilities while maintaining role-based access to protected information.
+The project is proposed as a software solution for an outpatient hospital environment. The project idea is raised from the identified need to improve the coordination and management of outpatient appointment and medical service processes. The primary stakeholders involved in defining the requirements are patients, receptionists, doctors, medical service staff, managers, and system administrators, who represent the main user groups and operational stakeholders of the proposed system.
+1.4. Major Features
+         Fig1. Feature tree
+--- TABLE START ---
+Index | Major Feature | Description and Distinguishing Value
+F01 | User Accounts and Profiles | Supports patient registration, sign-in, internal staff accounts, patient information, and doctor profiles. Access to information is controlled according to the userâ€™s role.
+F02 | Appointments and Patient Reception | Supports doctor schedule viewing, appointment booking, walk-in registration, appointment changes, cancellation, patient check-in, and clinic queue management. It combines appointment administration with front-desk reception activities.
+F03 | Clinical Records and Encounters | Supports assigned patient worklists, medical record access, clinical examination documentation, diagnosis recording, treatment decisions, patient handoff acceptance, follow-up requests, and encounter completion.
+F04 | Medical Service Requests and Results | Supports the complete service-request lifecycle: Ordered â†’ Accepted â†’ In Progress â†’ Completed. It also supports service execution tracking, result recording, attachments, result correction, and doctor result review.
+F05 | Invoices and Payments | Provides a reserved feature area for viewing basic medical service cost or payment-related information. The exact scope of invoices, payments, and adjustments requires further confirmation.
+F06 | Patient Feedback | Supports manager access to patient feedback, priority flagging for low-rated feedback, and recording the progress of feedback handling without changing the original feedback content.
+F07 | Operational and Financial Reporting | Supports operational dashboards, appointment reports, cancellation and no-show reports, doctor utilization, medical service performance reports, and PDF report export.
+--- TABLE END ---
+
+1.5. Tools & Infrastructures
+--- TABLE START ---
+Category | Tools / Infrastructure
+Technology | React 18 (FrontEnd), Java Spring (BackEnd)
+Database | My SQL, Redis
+API | Restful API, WebSocket
+IDEs/Editors | Visual Studio Code, Inteliji
+Diagramming | Visual paradigm
+Documentation | Google Docs/Sheets/Slides
+Version Control | Git
+Deployment server | AWS, Docker
+Test tool | Postman, Swagger
+Project management | GitLab (Tasks, Defects), Excel, Jira
+--- TABLE END ---
+
+II. Software Requirement Specification
+1. Overall Requirement
+The Hospital Appointment & Medical Service Management System is a software system designed to support outpatient appointment and medical service processes within a hospital. The system provides a common platform for managing patient appointments, patient reception, clinical records and encounters, medical service requests and results, staff schedules, operational reporting, patient feedback, and service-related payments.
+The context diagram below illustrates the system boundary, the external actors interacting with the system, and the main information exchanged between the system and its external entities. The primary external actors are Patient, Receptionist, Doctor, Medical Service Staff, Manager, and Admin. The system also interacts with a VNPay Payment Service  to process patient payments and SMTP Gmail Service to send notification to patient and hospital staff.
+The system is intended to support the coordination of outpatient activities while providing role-based access to relevant information and functions. The context diagram represents the overall system context and does not describe the detailed internal processes or workflows of individual use cases.
+1.2 Main Workflows
+1.2.1 Appointment Booking
+1.2.2 Appointment Processing
+1.2.3 Clinical Examination and Medical Service Delivery 
+1.3. User Requirements
+1.3.1 Actors
+--- TABLE START ---
+ID | Use Case | Feature
+1 | Guest | A visitor who accesses public medical information, registers a patient account.
+2 | Patient | A registered patient who manages personal information, appointments, visit history, and permitted medical results.
+3 | Receptionist | A staff member who supports appointment handling, patient check-in, and clinic queue operations.
+4 | Doctor | A physician who examines assigned patients, records clinical information, orders services, reviews results, and completes encounters.
+5 | Medical Service Staff | A staff member who receives service requests, performs assigned services, records results, and updates service status.
+6 | Admin | An administrator who manages internal accounts, doctor profiles, schedules, appointments, and permitted patient information.
+7 | Manager | A manager who monitors operations, queues, doctor utilization, reports, and report exports.
+--- TABLE END ---
+
+1.3.2 Use Case List (UC)
+--- TABLE START ---
+ID | Use Case | Feature | Use Case Description
+01 | Sign In | User Accounts and Profiles | User provides valid credentials to access the system according to the assigned role.
+02 | Register Patient Account | User Accounts and Profiles | Guest provides required registration information and creates a patient account.
+03 | View Personal Profile | User Accounts and Profiles | User views their personal profile and account information.
+04 | Update Personal Information | User Accounts and Profiles | User updates permitted personal information.
+05 | View Patient List | User Accounts and Profiles | The receptionist views the list of patients available for reception activities.
+06 | View Patient Information | User Accounts and Profiles | Authorized staff member views permitted patient information required for their work.
+07 | View Internal Account List | User Accounts and Profiles | Admin views the list of internal staff accounts.
+08 | View Internal Account Detail | User Accounts and Profiles | Admin views the details of a selected internal account.
+09 | Create Internal Account | User Accounts and Profiles | Admin creates an internal staff account, including the relevant staff profile information required by the system.
+10 | Update Internal Account | User Accounts and Profiles | Admin updates permitted internal account information or account status.
+11 | View Doctor List | User Accounts and Profiles | Guest views the list of available doctors in the system.
+12 | View Doctor Profile | User Accounts and Profiles | Guest views the detailed profile information of a selected doctor.
+13 | Create New Patient Profile | User Accounts and Profiles | Receptionist creates a new patient profile with the required personal information.
+14 | Update Patient Profile | User Accounts and Profiles | Receptionist updates permitted information of an existing patient profile.
+15 | Cancel Appointment | Scheduling, Appointments and Reception | User selects an eligible appointment and cancels it.
+16 | View Doctor Work Schedule | Scheduling, Appointments and Reception | User views available doctor work schedules for appointment-related purposes.
+17 | View Upcoming Appointments | Scheduling, Appointments and Reception | Patient views their upcoming appointments and current statuses.
+18 | View Appointment Details | Scheduling, Appointments and Reception | Patient views the date, time, doctor, and related information of an appointment.
+19 | Create Walk-in Appointment | Scheduling, Appointments and Reception | Receptionist creates an appointment for a patient who arrives without a prior appointment.
+20 | Check In Appointment | Scheduling, Appointments and Reception | Receptionist verifies an appointment and records the patient's check-in.
+21 | Undo Check-in | Scheduling, Appointments and Reception | Receptionist reverses an incorrect check-in and updates the appointment status.
+22 | View Personal Work Schedule | Scheduling, Appointments and Reception | Authorized staff member views their assigned work schedule.
+23 | Submit Schedule Change Request | Scheduling, Appointments and Reception | Doctor or Medical Service Staff submits a request to change an assigned work schedule. The request must be submitted at least one week before the requested change date.
+24 | View Doctor Appointments | Scheduling, Appointments and Reception | Manager views appointments assigned to a doctor for a selected period.
+25 | Assign Staff to Weekly Shifts | Scheduling, Appointments and Reception | Manager assigns staff to shifts for a selected work week.
+26 | Update Shift Assignment | Scheduling, Appointments and Reception | Manager changes an existing staff shift assignment after checking applicable scheduling constraints.
+27 | View Master Work Schedule | Scheduling, Appointments and Reception | Manager views the overall staff work schedule by period, staff member, or role.
+28 | Process Schedule Change Request | Scheduling, Appointments and Reception | Manager reviews and approves or rejects a submitted schedule change request.
+29 | Add Schedule Event | Scheduling, Appointments and Reception | Admin adds a schedule event with the required scheduling information.
+30 | View Shift Template List | Scheduling, Appointments and Reception | Admin views available shift templates.
+31 | View Shift Template Detail | Scheduling, Appointments and Reception | Admin views the details of a selected shift template.
+32 | Create Shift Template | Scheduling, Appointments and Reception | Admin creates a shift template with the required working-time information.
+33 | Update Shift Template | Scheduling, Appointments and Reception | Admin updates an existing shift template.
+34 | View Work-Time Policy | Scheduling, Appointments and Reception | Admin views the configured staff work-time policy.
+35 | Update Work-Time Policy | Scheduling, Appointments and Reception | Admin updates the applicable work-time rules used for staff scheduling.
+36 | View Appointment Rule List | Scheduling, Appointments and Reception | Admin views the appointment rules configured in the system.
+37 | View Appointment Rule Detail | Scheduling, Appointments and Reception | Admin views the details of a selected appointment rule.
+38 | Create Appointment Rule | Scheduling, Appointments and Reception | Admin creates an appointment rule defining how appointments can be scheduled or managed.
+39 | Update Appointment Rule | Scheduling, Appointments and Reception | Admin updates an existing appointment rule.
+40 | Booking Appointment | Scheduling, Appointments and Reception | Patient selects an available time slot and submits required information to book a new appointment.
+41 | Reschedule Appointment | Scheduling, Appointments and Reception | Patient or Receptionist selects an existing appointment and changes its date/time to a new available slot.
+42 | View Appointment List | Scheduling, Appointments and Reception | Receptionist views the list of appointments for reception and management activities.
+43 | Create New Appointment | Scheduling, Appointments and Reception | Receptionist creates a new appointment for a patient from the appointment list.
+44 | View Medical Visit History | Clinical Records and Encounters | Patient views their previous medical visits.
+45 | View Medical Visit Result Details | Clinical Records and Encounters | Patient views the details of an available medical visit result.
+46 | View Assigned Patient List | Clinical Records and Encounters | Doctor views the patients assigned to the doctor for the relevant clinical work period.
+47 | View Medical Record | Clinical Records and Encounters | Doctor views the permitted medical record information of an assigned patient.
+48 | Record Clinical Examination Findings | Clinical Records and Encounters | Doctor records clinical examination findings for the current encounter.
+49 | Record and Update Diagnosis | Clinical Records and Encounters | Doctor records or updates the patient's diagnosis.
+50 | Record Treatment Decision | Clinical Records and Encounters | Doctor records the treatment decision resulting from the examination and available results.
+51 | Record Follow-up Request | Clinical Records and Encounters | Doctor records the need for a future follow-up or revisit.
+52 | Complete Encounter | Clinical Records and Encounters | Doctor completes the current clinical encounter after required documentation is recorded.
+53 | Create Medical Service Request | Medical Service Requests and Results | Doctor creates a medical service request for a patient and the patient is placed in the appropriate service queue.
+54 | Edit Ordered Service Request | Medical Service Requests and Results | Doctor updates permitted information of an eligible ordered service request.
+55 | Cancel Ordered Service Request | Medical Service Requests and Results | Doctor cancels an eligible ordered medical service request.
+56 | Review and Confirm Service Result Handling | Medical Service Requests and Results | Doctor reviews a completed service result and records the appropriate clinical handling.
+57 | View Medical Service Queue | Medical Service Requests and Results | Medical Service Staff views patients waiting for a medical service and selects the next eligible patient according to the queue.
+58 | Record and Complete Service Result | Medical Service Requests and Results | Medical Service Staff records the performed service and its result and completes the service result.
+59 | Record Unable-to-Perform Service | Medical Service Requests and Results | Medical Service Staff records that a requested service cannot be performed and provides the applicable reason.
+60 | View Medical Service List | Medical Service Requests and Results | Admin views the list of medical services available in the system.
+61 | View Medical Service Detail | Medical Service Requests and Results | Admin views the details of a selected medical service.
+62 | Create Medical Service | Medical Service Requests and Results | Admin creates a medical service with the required information.
+63 | Update Medical Service | Medical Service Requests and Results | Admin updates permitted medical service information or status.
+64 | View Basic Medical Service Costs | Service Costs and Payments | Authorized user views the basic cost information associated with available medical services.
+65 | Make Payment | Service Costs and Payments | Patient initiates payment for an outstanding charge through the third-party payment provider, and the system records the payment result.
+66 | View Performance and Utilization Reports | Operational Reporting | Manager views workload, schedule utilization, and defined operational performance indicators.
+67 | View Appointment and No-Show Reports | Operational Reporting | Manager views appointment, cancellation, and no-show information for a selected period.
+68 | Export Operational Reports | Operational Reporting | Manager exports a selected operational report using the supported format.
+69 | Create Appointment Feedback | Patient Feedback | Patient submits feedback related to a completed appointment.
+70 | View Patient Feedback List | Patient Feedback | The manager views the list of patient feedback records.
+71 | View Patient Feedback Detail | Patient Feedback | The manager views the details of a selected patient feedback record.
+72 | Update Patient Feedback Handling Status | Patient Feedback | Manager updates the handling status or progress of patient feedback without changing its original content.
+73 | Log Out | User Accounts and Profiles | The authenticated user logs out of the hospital management system and The system terminates the current authenticated session
+74 | Forgot password | User Accounts and Profiles | The account holder requests a password reset when they cannot remember their current password
+--- TABLE END ---
+
+1.3.3 Use Case Diagrams
+1.3.3.1 UCs for Guest
+1.3.3.2 UCs for Patient
+1.3.2.3 UCs for Receptionist
+1.3.2.4 UCs for Doctor
+1.3.2.5 UCs for Medical Service Staff
+1.3.2.6 UCs for Admin
+1.3.2.7 UCs for Manager
+1.4 System Functionalities
+1.4.1 Screens Flow
+1.4.2 Screen Authorization
+--- TABLE START ---
+Screen | Guest | Patient | Receptionist | Doctor | Medical Service Staff | Manager | Admin
+Home | X | X | X | X | X | X | X
+Sign In | X | X | X | X | X | X | X
+Patient Registration | X |  |  |  |  |  | 
+Personal Profile |  | X | X | X | X | X | X
+Doctor Directory | X | X | X | X | X | X | X
+Doctor Profile and Availability | X | X | X | X | X | X | X
+My Appointments |  | X |  |  |  |  | 
+Appointment Details |  | X |  |  |  |  | 
+Appointment Booking |  | X |  |  |  |  | 
+Medical Visit History |  | X |  |  |  |  | 
+Medical Visit Results |  | X |  |  |  |  | 
+Payment |  | X |  |  |  |  | 
+Patient Directory |  |  | X |  |  |  | 
+Reception Appointments |  |  | X |  |  |  | 
+My Work Schedule |  |  | X | X | X |  | 
+Assigned Patients |  |  |  | X |  |  | 
+Clinical Encounter Workspace |  |  |  | X |  |  | 
+Medical Service Queue |  |  |  |  | X |  | 
+Service Request Workspace |  |  |  |  | X |  | 
+Internal Accounts |  |  |  |  |  |  | X
+Shift Templates |  |  |  |  |  |  | X
+Work-Time Policy |  |  |  |  |  |  | X
+Appointment Rules |  |  |  |  |  |  | X
+Medical Service Catalog |  |  |  |  |  |  | X
+Schedule Event Entry |  |  |  |  |  |  | X
+Medical Service Costs | X | X | X | X | X | X | X
+Master Work Schedule |  |  |  |  |  | X | 
+Schedule Change Requests |  |  |  |  |  | X | 
+Doctor Appointments |  |  |  |  |  | X | 
+Operational Reports |  |  |  |  |  | X | 
+Patient Feedback |  |  |  |  |  | X | 
+--- TABLE END ---
+
+1.4.3 Non-UI Functions
+--- TABLE START ---
+# | Feature | System Function | Description
+1 | Scheduling, Appointments and Reception | No-Show Detection Cron Job | Automatically scans appointments after each scheduled shift/session and identifies appointments whose patients did not check in or attend within the required time. The system updates the appointment status to No-Show according to the business rules.
+2 | Notification | SMTP Email Notification Service | Sends automated email notifications to patients using an SMTP mail server. The service is used for appointment-related notifications, such as appointment confirmation, cancellation, rescheduling, and no-show notifications.
+3 | Invoices and Payments | VNPay Payment API Integration | Integrates with the VNPay payment gateway to create payment requests, redirect patients to the VNPay payment page, and receive payment results/callbacks. The system verifies the transaction result and updates the corresponding appointment/payment status.
+--- TABLE END ---
+
+1.5 Entity Relationship Diagram
+Entities Description 
+--- TABLE START ---
+# | Entity | Description
+1 | Doctor_Profile | Doctor's professional and public profile information
+2 | Role | Defines the role and permissions assigned to a system user
+3 | User_Account | Stores account and authentication information for system users
+4 | Patient | Stores patient information and identifies a patient within the hospital system
+5 | Patient_Feedback | Stores feedback provided by patients about their hospital experience or services
+6 | Hospital_Staff | Stores information about hospital staff members who operate and manage the system
+7 | Work_Schedule | Stores work schedule and assigned working periods of hospital staff
+8 | Schedule_Change_Request | Stores requests submitted by staff to change their assigned work schedule
+9 | Medical_Record | Stores and organizes a patient's medical information and clinical history
+10 | Appointment | Stores information about a patient's scheduled or walk-in medical appointment
+11 | Encounter | Represents a patient's actual medical visit or clinical interaction with the hospital
+12 | Medical_Service | Stores information about medical services offered by the hospital
+13 | Service_Request_Item | Represents a requested medical service item associated with a service request
+14 | Medical_Service_Result | Stores the result and supporting information produced from performing a medical service
+15 | Service_Request | Stores a request for a medical service for a patient during an encounter
+16 | Diagnosis | Stores diagnoses recorded by a doctor during a patient's encounter
+17 | Treatment_Decision | Stores treatment decisions made by a doctor during a patient's encounter
+18 | Invoice | Stores billing information generated for medical services or service requests
+19 | Payment | Stores payment information associated with an invoice
+--- TABLE END ---
+
+3. Use Case Specifications
+3.1 User Accounts and Profiles 
+3.1.1. Sign In
+--- TABLE START ---
+ID and Name | UC01 - Sign In
+Created by | Nguyá»…n Tuáº¥n Nam
+Primary Actor | System User | Secondary Actor | None
+Description | Guest provides valid account credentials to sign in to the hospital system. The system authenticates the account and grants access according to the permissions assigned to the account.
+Preconditions | The user has an existing account permitted to access the system. The user is not currently signed in.
+Main Sequence | 1. Guest selects the sign-in function.2. The system displays the sign-in form.3. Guest enters the account credentials.4. The system validates the provided credentials.5. The system authenticates the account and retrieves its assigned permissions.6. The system grants access to the functions permitted for the account and displays the appropriate home page.
+Alternative Sequences | Step 4: If the credentials are invalid, the system rejects the sign-in attempt and prompts the Guest to enter the credentials again.Step 4: If the account is not permitted to access the system, the system rejects the sign-in attempt and informs the Guest that the account cannot be used to access the system.
+Exceptions | None
+Post conditions | The user is signed in successfully and has access only to functions permitted by the account's assigned permissions.
+Business Rule | BR-42
+--- TABLE END ---
+
+3.1.2. Register Patient Account
+3.1.3. View Personal Profile
+3.1.4.Update Personal Information
+3.1.5.View Patient List
+3.1.6.View Patient Information
+3.1.7. View Internal Account List
+3.1.8. View Internal Account Detail
+3.1.9. Create Internal Account
+3.1.10. Update Internal Account
+3.1.11. View Doctor List
+3.1.12. View Doctor Profile
+3.1.13. Create New Patient Profile
+3.1.14. Update Patient Profile
+3.2 Scheduling, Appointments and Reception 
+3.2.1.Cancel Appointment
+3.2.3.View Doctor Work Schedule
+3.2.4.View Upcoming Appointments
+3.2.5.View Appointment Details
+3.2.6.Create Walk-in Appointment
+3.2.7.Check In Appointment
+3.2.8.Undo Check-in
+3.2.9.View Personal Work Schedule
+3.2.10.Submit Schedule Change Request
+3.2.11.View Doctor Appointments
+--- TABLE START ---
+ID and Name | UC24 - View Doctor Appointments
+Created by | Truong Khanh Dong
+Primary Actor | Manager | Secondary Actor | None
+Description | Manager views appointments assigned to a doctor for a selected period.
+Preconditions | Manager is logged into the system
+Main Sequence | 1. Manager selects the "Doctor Appointments" menu.2. System displays a list of appointment schedules with filter options (date range, doctor, department, status).3. Manager applies desired filters to refine the list.4. System retrieves and displays matching appointment details (patient name, time slot, doctor, status)
+Alternative Sequences | Step 4a: If no records match the filter criteria, system displays a "No appointments found" message.
+Post conditions | Appointment schedule details are displayed on the screen.
+Business Rule | none
+--- TABLE END ---
+
+3.2.12.Assign Staff to Weekly Shifts
+--- TABLE START ---
+ID and Name | UC25 - Assign Staff to Weekly Shifts
+Created by | Truong Khanh Dong
+Primary Actor | Manager | Secondary Actor | None
+Description | Manager assigns staff to shifts for a selected work week.
+Preconditions | The Manager is logged into the system. The work schedule for the upcoming week has not been published yet
+Main Sequence | 1. Manager selects the target week and department to assign shifts.2. System displays the list of department staff and empty shift slots for the week.3. Manager selects staff members and assigns them to specific shifts (Morning / Afternoon / Night).4. System validates assignment details against Business Rules.5. System saves the shift assignments and notifies staff members of their new schedule.
+Alternative Sequences | Step 4: If the assignment violates Business Rules (e.g., overlapping shifts, exceeding maximum hours), the system displays error alerts and prompts the Manager to adjust
+Post conditions | The new weekly schedule is created successfully and status is set to "Assigned"
+Business Rule | BR11: A staff member cannot be assigned to two overlapping shifts on the same day.BR12: Staff working a Night shift must have a minimum rest period of 12 consecutive hours before starting the next shift.BR14: Total working hours for a staff member must not exceed 48 hours per week
+--- TABLE END ---
+
+3.2.13.Update Shift Assignment
+3.2.14.View Master Work Schedule
+3.2.15.Process Schedule Change Request
+3.2.16.Add Schedule Event 
+3.2.17.View Shift Template List
+3.2.18.View Shift Template Detail
+3.2.19.Create Shift Template
+3.2.20.Update Shift Template
+3.2.21.View Work-Time Policy
+3.2.22.Update Work-Time Policy
+3.2.23.View Appointment Rule List
+3.2.24.View Appointment Rule Detail
+3.2.25.Create Appointment Rule
+3.2.26.Update Appointment Rule
+3.2.27.Booking Appointment
+3.2.28.Reschedule Appointment
+3.2.29.View Appointment List
+3.2.30.Create New Appointment
+3.3 Clinical Records and Encounters 
+3.3.1. View Medical Visit History
+--- TABLE START ---
+ID and Name | UC12 - View Medical Visit History
+Created by | Nguyá»…n Tuáº¥n Nam
+Primary Actor | Patient | Secondary Actor | None
+Description | Patient views their historical medical visits, including completed visits and associated medical information that is permitted for patient access.
+Preconditions | The Patient has successfully signed in. The Patient has an existing patient profile.
+Main Sequence | 1. Patient selects the option to view medical visit history.2. System identifies the Patient associated with the signed-in account.3. System retrieves the Patient's medical visit history that is permitted for patient access.4. System displays the medical visits in the Patient's history.5. Patient reviews the medical visit history and may select a visit to view its details.
+Alternative Sequences | Step 3: If the Patient has no medical visit history, the system displays a message â€œno medical visits to displayâ€.Step 3: If the system cannot retrieve the medical visit history, the system displays an error message and does not display incomplete or invalid information.
+Post conditions | The Patient has viewed their permitted medical visit history. No medical record is modified.
+Business Rule | BR-31
+--- TABLE END ---
+
+3.3.2.View Medical Visit Result Details
+3.3.3.View Assigned Patient List
+--- TABLE START ---
+ID and Name | 40 â€” View Assigned Patient List
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor views patients assigned to them for the relevant clinical work period.
+Preconditions | 1. The Doctor is signed in.2. The account is associated with an authorized doctor profile.
+Main Sequence | 1. The Doctor opens the assigned patient worklist.2. The System identifies the Doctor and the current clinical work period.3. The System retrieves patients associated with the Doctor through valid appointments, explicit assignments, or valid check-ins.4. The System displays the assigned patients with identifying information and available appointment, check-in, or encounter status.5. The Doctor reviews the worklist.
+Alternative Sequences | 3a. No assigned patients: The System displays a message that no patients are assigned for the selected period. The use case ends.3b. Retrieval fails: The System displays an error and allows the Doctor to retry Step 3.5a. Select another period: The Doctor selects another permitted work period. The System retrieves and displays the corresponding worklist.5b. Open a medical record: The Doctor selects a patient and requests their medical record. The interaction continues in 41 â€” View Medical Record.
+Post conditions | Success: The Doctor has viewed the assigned patient worklist or received confirmation that no patients are assigned.In all cases: Viewing or selecting a patient does not create an assignment or transfer clinical responsibility.
+Business Rule | BR-01: The worklist contains only patients associated with the Doctor through a valid Appointment, assignment, or Check-in.BR-23: Clinical responsibility changes only after the receiving Doctor confirms handoff acceptance. Selecting a patient from the worklist does not constitute acceptance.
+--- TABLE END ---
+
+3.3.4.View Medical Record
+--- TABLE START ---
+ID and Name | 41 â€” View Medical Record
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor views the permitted medical record information of an assigned patient to support examination and clinical decisions.
+Preconditions | 1. The Doctor is signed in.2. A patient has been selected.3. The Doctor has an authorized care assignment or accepted responsibility for the patient.
+Main Sequence | 1. The Doctor requests the selected patientâ€™s medical record.2. The System verifies the Doctorâ€™s current access authorization.3. The System retrieves the patient identification and medical record information within the permitted scope.4. The System displays the record overview and available clinical sections.5. The Doctor selects a section or encounter.6. The System displays the corresponding clinical information and its recording details where available.7. The Doctor reviews the displayed information.
+Alternative Sequences | 2a. Access is no longer authorized: The System denies access without displaying the medical record. The use case ends.3a. No previous clinical history: The System displays the available patient and current encounter information and indicates that no previous clinical history is recorded.3b or 6a. Retrieval fails: The System identifies the information that could not be loaded and allows the Doctor to retry the failed retrieval.6b. Selected section has no information: The System displays an empty-section message. The Doctor may return to Step 5.7a. View another section: The Doctor selects another section or encounter. The flow returns to Step 6.
+Post conditions | Success: The Doctor has viewed the permitted medical record information.In all cases: Medical record content remains unchanged. Opening a result does not confirm clinical handling.
+Business Rule | BR-21: Opening a Medical Service Result does not remove it from the Action needed state.BR-35: The Doctor may access a patientâ€™s medical record only through an authorized care assignment or accepted clinical responsibility and within their permitted access scope.
+--- TABLE END ---
+
+3.3.5.Record Clinical Examination Findings
+--- TABLE START ---
+ID and Name | 42 â€” Record Clinical Examination Findings
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor records clinical examination findings for the patientâ€™s current encounter.
+Preconditions | 1. The Doctor is signed in.2. The patient and encounter have been selected.3. The encounter is active.4. The Doctor is authorized to document the encounter.
+Main Sequence | 1. The Doctor opens the examination documentation function for the selected encounter.2. The System displays the patient identification, encounter identification, and applicable examination fields.3. The Doctor enters the examination findings.4. The Doctor reviews and submits the information.5. The System validates required information and data formats and rechecks authorization and encounter status.6. The System saves the findings with the Patient, Encounter, recording Doctor, and recording time.7. The System confirms the save and displays the recorded findings.
+Alternative Sequences | 4a. Cancel entry: The Doctor cancels before saving. The System asks for confirmation before discarding unsaved information. If confirmed, the use case ends without saving; otherwise, the flow returns to Step 3.5a. Invalid or missing information: The System identifies the affected fields and retains the input. The Doctor corrects the information and returns to Step 4.5b. Encounter is no longer active or authorization is lost: The System rejects the save and explains the restriction. Existing records remain unchanged.6a. Save fails: The System reports that the findings were not saved and retains the input for retry while the session remains valid.
+Post conditions | Success: Examination findings are saved for the selected encounter with the recording Doctor and recording time.Failure or cancellation: No new findings are saved by the attempt; existing information remains unchanged.Saving findings does not complete the encounter.
+Business Rule | BR-26: Encounter completion requires confirmation by the Responsible Doctor after the completion conditions are satisfied.BR-32: Clinical documentation identifies its Patient, Encounter, recording Doctor, and recording time.BR-33: Examination findings may be recorded only by an authorized Doctor while the encounter is active.
+--- TABLE END ---
+
+3.3.6.Record and Update Diagnosis
+--- TABLE START ---
+ID and Name | 43 â€” Record and Update Diagnosis
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor records a diagnosis or updates an existing diagnosis for the patientâ€™s current encounter.
+Preconditions | 1. The Doctor is signed in.2. The patient and encounter have been selected.3. The encounter is active.4. The Doctor is authorized to document diagnoses for the encounter.
+Main Sequence | 1. The Doctor opens the diagnosis section of the selected encounter.2. The System displays the patient and encounter identification and any existing diagnoses.3. The Doctor chooses to add a diagnosis.4. The System displays the applicable diagnosis fields.5. The Doctor enters the diagnosis information and submits it.6. The System validates the required information and rechecks authorization and encounter status.7. The System saves the diagnosis with the Patient, Encounter, recording Doctor, and recording time.8. The System confirms the save and displays the diagnosis.
+Alternative Sequences | 3a. Update a diagnosis: The Doctor selects an existing diagnosis. The System displays its current information. The Doctor changes the permitted information and submits it. The flow continues at Step 6. At Step 7, the System saves the updated diagnosis and its change history.5a. Cancel entry or update: The Doctor cancels and confirms discarding unsaved input. The use case ends without changing stored diagnoses.6a. Invalid or missing information: The System identifies the problem and retains the input. The Doctor corrects and resubmits the information.6b. Encounter is no longer active or authorization is lost: The System rejects the operation without changing the diagnosis.7a. Save fails: The System reports the failure and retains the input for retry while the session remains valid. Step 3: If the customerâ€™s credit card request is denied, the system promptsthe customer to enter a different credit card number. The customer caneither enter a different credit card number or cancel the order.
+Post conditions | Success: A diagnosis is recorded or the selected diagnosis is updated for the encounter. A diagnosis update retains the previous information in its change history.Failure or cancellation: Existing diagnosis information remains unchanged.
+Business Rule | BR-26: Required clinical information must be recorded before Encounter completion.BR-32: Diagnosis documentation identifies its Patient, Encounter, recording Doctor, and recording time.BR-33: Diagnosis entry or update requires an authorized Doctor and an active encounter.BR-34: Diagnosis updates preserve the previous information, updated information, editor, and update time.
+--- TABLE END ---
+
+3.3.7.Record Treatment Decision
+--- TABLE START ---
+ID and Name | 44 â€” Record Treatment Decision
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor records the treatment decision based on the examination and available clinical information.
+Preconditions | 1. The Doctor is signed in.2. The patient and encounter have been selected.3. The encounter is active.4. The Doctor is authorized to record treatment decisions for the encounter.
+Main Sequence | 1. The Doctor opens the treatment decision section.2. The System displays the patient and encounter identification and the applicable documentation fields.3. The Doctor enters the treatment decision and applicable care instructions.4. The Doctor reviews and submits the information.5. The System validates required information and rechecks authorization and encounter status.6. The System saves the treatment decision with the Patient, Encounter, recording Doctor, and recording time.7. The System confirms the save and displays the recorded decision.
+Alternative Sequences | 3a. No additional treatment is required: The Doctor records that decision and any applicable instructions. The flow continues at Step 4.4a. Cancel entry: The Doctor cancels and confirms discarding unsaved input. The use case ends without saving.5a. Invalid or missing information: The System identifies the affected fields and retains the input. The Doctor corrects the information and returns to Step 4.5b. Encounter is no longer active or authorization is lost: The System rejects the save.6a. Save fails: The System reports the failure and retains the input for retry while the session remains valid. Step 3: If the customerâ€™s credit card request is denied, the system promptsthe customer to enter a different credit card number. The customer caneither enter a different credit card number or cancel the order.
+Post conditions | Success: The treatment decision is recorded for the selected encounter.Failure or cancellation: No treatment decision is saved by the attempt.Recording the decision does not automatically create a service request, book an appointment, or complete the encounter.
+Business Rule | BR-16: Medical Service Staff shall not record or determine the patientâ€™s clinical treatment decision.BR-25: Completion of a treatment service does not automatically require a return visit or Follow-up Request.BR-26: Required clinical information must be recorded before Encounter completion.BR-32 and BR-33: Treatment documentation identifies its Patient, Encounter, author, and recording time and requires an authorized Doctor and an active encounter.
+--- TABLE END ---
+
+3.3.8.Record Follow-up Request
+--- TABLE START ---
+ID and Name | 45 â€” Record Follow-up Request
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor records a request for future follow-up, including the reason, requested timing, and Follow-up Priority.
+Preconditions | 1. The Doctor is signed in.2. The patient and relevant encounter have been identified.3. The Doctor is authorized to arrange clinical follow-up for the patient.
+Main Sequence | 1. The Doctor opens the follow-up request function for the selected patient and encounter.2. The System displays the patient and encounter identification and the follow-up request fields.3. The Doctor enters the follow-up reason and requested timing.4. The Doctor specifies the Follow-up Priority and a preferred Doctor or clinic, if needed.5. The Doctor reviews and submits the request.6. The System validates the required information and the Doctorâ€™s authorization.7. The System saves the Follow-up Request with the Patient, originating Encounter, requesting Doctor, and recording time.8. The System confirms that the request is recorded and available for appointment handling.
+Alternative Sequences | 5a. Cancel request: The Doctor cancels and confirms discarding unsaved input. No Follow-up Request is created.6a. Invalid or missing information: The System identifies the affected fields and retains the input. The Doctor corrects the information and returns to Step 5.6b. Authorization is no longer valid: The System rejects the request.7a. Save fails: The System reports the failure and retains the input for retry while the session remains valid.
+Post conditions | Success: A Follow-up Request is recorded and available to the Appointment workflow. No specific appointment slot is reserved by this use case.Failure or cancellation: No Follow-up Request is created by the attempt.A completed originating encounter is not automatically reopened.
+Business Rule | BR-03: Follow-up Priority and Service Priority are stored and evaluated independently.BR-24: A Follow-up Request is separate from an Appointment and contains the reason, requested timing, and Follow-up Priority.BR-25: Completing a treatment service does not automatically create a Follow-up Request.BR-27: Result correction does not automatically reopen a completed encounter.BR-30: If follow-up cannot be provided by an eligible Doctor during the current clinic session, a new Appointment is required through the Appointment process.
+--- TABLE END ---
+
+3.3.9.Complete Encounter
+--- TABLE START ---
+ID and Name | 46 â€” Complete Encounter
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor |  | 
+Description | The Responsible Doctor confirms completion of the encounter after the System verifies that required clinical documentation, service processing, and result handling are complete.
+Preconditions | 1. The Doctor is signed in.2. An active encounter has been selected.3. The Doctor is the current Responsible Doctor for the encounter.
+Main Sequence | 1. The Doctor requests to complete the selected encounter.2. The System verifies that the Doctor is the current Responsible Doctor.3. The System checks that required clinical information, including examination findings, diagnosis, treatment decisions, and any required follow-up information, has been recorded.4. The System checks that no required Medical Service remains unfinished within the current encounter and that required results have a recorded handling decision and processing confirmation.5. The System displays the encounter completion summary and requests confirmation.6. The Doctor confirms completion.7. The System rechecks responsibility and completion conditions, then records the encounter as Completed with the confirming Doctor and completion time.8. The System confirms that the encounter is completed.
+Alternative Sequences | 2a. Doctor is not the Responsible Doctor: The System rejects the completion request. The encounter remains unchanged.3a. Required clinical information is missing: The System lists the missing information and blocks completion. After recording the information through the relevant functions, the Doctor may restart this use case.4a. Service processing or result handling is outstanding: The System identifies the outstanding items and leaves the encounter active.6a. Doctor cancels confirmation: The System leaves the encounter active.7a. Completion conditions or responsibility have changed: The System rejects completion and displays the current restriction.7b. Encounter is already completed: The System displays its completion information without recording a second completion.7c. Save fails: The System reports the failure and does not confirm a successful completion.
+Post conditions | Success: The encounter is Completed, and the confirming Doctor and completion time are recorded.Blocked or cancelled: This attempt does not change the encounter status.Future follow-up requests remain available for appointment handling.
+Business Rule | BR-21: Viewing a result is insufficient; the Responsible Doctor must record and confirm its clinical handling.BR-23: A receiving Doctor becomes responsible only after accepting the handoff.BR-24: A Follow-up Request is separate from the future Appointment.BR-26: Only the Responsible Doctor may complete an encounter, and required services, result review, and clinical documentation must be complete.BR-27: A later result correction does not automatically reopen the encounter.
+--- TABLE END ---
+
+3.4 Medical Service Requests and Results 
+3.4.1. Create Medical Service Request 
+--- TABLE START ---
+ID and Name | 48 â€” Create Medical Service Request
+Created by | Nguyá»…n Hiáº¿u SÆ¡n
+Primary Actor | Doctor | Secondary Actor | None
+Description | The Doctor creates a Medical Service Request for a patient when an additional medical service is required for diagnosis, treatment, or supplementary information. The Doctor specifies the requested Medical Service, request details, and Service Priority.
+Preconditions | 1. The Doctor is authenticated.2. The Patient has an active Encounter.3. The Doctor is authorized to create a Medical Service Request for the Encounter.
+Main Sequence | 1. The Doctor selects the Patient and the relevant Encounter.2. The doctor selects the required Medical Service.3. The doctor enters the request details.4. The doctor specifies the Service Priority.5. The system validates the Patient, Encounter, Medical Service, and Service Priority information.6. The system creates a new Medical Service Request with status Ordered.7. The system associates the request with the Patient, Encounter, requesting Doctor, Medical Service, and Service Priority.8. The system confirms that the Medical Service Request has been created.
+Alternative Sequences | Step 5: If any required request information is missing or invalid, the System identifies the invalid information and asks the Doctor to correct it.Step 6: If an existing request for the same service is already In Progress, the Doctor creates a new or additional request. The existing request remains unchanged.
+Post conditions | A new Medical Service Request exists with status Ordered and is associated with the relevant Patient, Encounter, requesting Doctor, Medical Service, and Service Priority.
+Business Rule | BR-02: A Medical Service Request shall identify the Patient, Encounter, requesting Doctor, requested Medical Service, and Service Priority.BR-03: A newly created Medical Service Request shall have status Ordered and shall not be considered accepted or in progress until it is accepted by Medical Service Staff.BR-07: If an existing request is already In Progress, the Doctor shall create a new or additional request instead of modifying or stopping the existing request.
+--- TABLE END ---
+
+3.4.2.View Medical Treatment Information
+--- TABLE START ---
+ID and Name | 
+Created by | 
+Primary Actor |  |  | 
+Description | 
+Preconditions | 
+Main Sequence | 
+Alternative Sequences | 
+Post conditions | 
+Business Rule | 
+--- TABLE END ---
+
+3.4.3.Edit Ordered Service Request
+3.4.4. Cancel Ordered Service Request
+3.4.5. Review and Confirm Service Result Handling
+3.4.6. View Medical Service Queue
+3.4.7. Record and Complete Service Result
+3.4.8. Record Unable-to-Perform Service
+3.4.9.View Medical Service List
+3.4.10.View Medical Service Detail
+3.4.11.Create Medical Service
+3.4.12.Update Medical Service
+3.5 Invoices and Payments 
+3.5.1.View Basic Medical Service Costs
+3.5.2.Make Payment
+3.6 Operational and Financial Reporting 
+3.6.1.View Performance and Utilization Reports
+3.6.2.View Appointment and No-Show Reports
+3.6.3.Export Operational Reports
+3.7 Patient Feedback 
+3.7.1.Create Appointment Feedback
+3.7.2.View Patient Feedback List
+3.7.3.View Patient Feedback Detail
+3.7.4.Update Patient Feedback Handling Status
+3.8 Others
+3.8.1 Log out
+3.8.2 Forgot password
+4. Non-Functional Requirements
+4.1 External Interfaces
+--- TABLE START ---
+ID | Interface | Description
+UI-01 | Responsive Web Interface | The web application shall be fully responsive across desktop resolutions (1920 Ã— 1080 to 1366 Ã— 768) for internal staff (Doctors, Receptionists, Managers) and mobile viewports (minimum width 375px) for Patients.
+UI-02 | Initial Page Rendering | Initial page render (First Contentful Paint - FCP) for public interfaces shall complete within 1.5 seconds over standard 4G connections.
+UI-03 | Client-side Validation | All client-side form validation errors shall be displayed within 100 ms of user input.
+HW-01 | Deployment Environment | The system shall run within Docker containers deployed on AWS EC2 instances.
+HW-02 | Barcode/QR Scanner | The system shall support standard USB/HID barcode and QR code scanners at reception counters for patient check-in (UC20) with a response time of less than 500 ms.
+SW-01 | Database Interface | The system shall interface with MySQL 8.0 through HikariCP connection pooling, maintaining 20 to 100 active connections.
+SW-02 | Redis Integration | Redis shall be integrated for session management and caching clinic schedules.
+SW-03 | Payment Gateway | The system shall integrate with VNPay Payment Service via RESTful APIs over HTTPS/TLS 1.3, handling payment verification within a 30-second timeout limit.
+CI-01 | REST API Communication | The system shall strictly enforce HTTPS (Port 443) for all RESTful API communication.
+CI-02 | Real-time Communication | The system shall use WSS (WebSocket Secure) for real-time medical service queue updates.
+CI-03 | Data Format | Data payload exchange between the React 18 frontend and Spring backend shall adhere 100% to JSON formatting.
+--- TABLE END ---
+
+4.2 Quality Attributes
+4.2.1 Usability 
+--- TABLE START ---
+ID | Quality Attribute | Description
+USA-01 | Learnability | Hospital staff (Doctors, Receptionists) shall be able to perform primary tasks, including patient check-in, clinical documentation, and service requests, after no more than 2 hours of system training.
+USA-02 | Workflow Efficiency | The patient appointment booking workflow shall require no more than 4 steps from doctor selection to confirmation.
+USA-03 | Accessibility | The patient-facing web portal shall comply with WCAG 2.1 Level AA standards to ensure readability for elderly users.
+--- TABLE END ---
+
+4.2.2 Reliability 
+--- TABLE START ---
+ID | Quality Attribute | Description
+REL-01 | System Availability | The system shall maintain an operational availability of 99.5% (24/7), allowing a maximum unplanned downtime of no more than 3.65 hours per month.
+REL-02 | Fault Tolerance | In the event of Third-Party Payment provider failure, the system shall safely log transaction attempts and allow patient retries without duplicating invoices.
+--- TABLE END ---
+
+4.2.3 Performance
+--- TABLE START ---
+ID | Quality Attribute | Description
+PER-01 | Read API Response Time | For read operations, including queries for schedules, doctor lists, and patient records, 95% of requests shall respond within 200 ms.
+PER-02 | Write API Response Time | For write operations, including booking submission, clinical notes, and diagnosis recording, 99% of requests shall complete within 500 ms.
+PER-03 | Report Generation | PDF and Excel report exports (UC68) containing up to 10,000 records shall finish generation within 3.0 seconds.
+PER-04 | Concurrent Users | The system shall support at least 200 concurrent active users during peak hospital operating hours without performance degradation.
+PER-05 | API Throughput | The backend API shall handle a peak throughput of at least 1,000 Requests Per Second (RPS) during high-demand booking slots.
+--- TABLE END ---
+
+4.2.4 Security
+--- TABLE START ---
+ID | Quality Attribute | Description
+SEC-01 | Authentication & Access Control | User authentication shall be enforced using JSON Web Tokens (JWT) combined with Role-Based Access Control (RBAC).
+SEC-02 | Session Timeout | Staff user sessions shall automatically expire after 30 minutes of inactivity to prevent unauthorized access to medical data.
+SEC-03 | Password Protection | User passwords shall be hashed using BCrypt with a minimum work factor of 12.
+SEC-04 | Data Encryption | All data in transit shall be encrypted via TLS 1.3.
+SEC-05 | Application Protection | The application shall mitigate 100% of OWASP Top 10 vulnerabilities, including SQL Injection, XSS, CSRF, and IDOR.
+SEC-06 | Auditability | All access and modifications to Patient Medical Records (UC47, UC48, UC49) shall generate immutable Audit Logs recording User_ID, Action, Timestamp, and IP_Address.
+--- TABLE END ---
+
+5. Requirement Appendix
+5.1 Business Rules
+--- TABLE START ---
+ID | Rule Definition
+BR-01 | A Doctorâ€™s patient worklist shall contain only patients associated with the Doctor through a valid Appointment, explicit patient assignment, or valid Check-in. A Doctor shall not add a patient without such an association.
+BR-02 | Each Medical Service Request shall reference exactly one Patient, one Encounter, one requesting Doctor, and one Medical Service, and shall contain one Service Priority.
+BR-03 | Service Priority shall determine the processing priority of a Medical Service Request. Follow-up Priority shall determine the priority of a Follow-up Request. The two values shall be stored and evaluated independently.
+BR-04 | The successful execution lifecycle of a Medical Service Request shall be Ordered â†’ Accepted â†’ In Progress â†’ Completed. These execution states shall not be skipped. Cancellation shall follow the applicable cancellation rules.
+BR-05 | A newly created Medical Service Request shall have status Ordered and shall remain pending acceptance until an authorized Medical Service Staff member accepts responsibility for processing it.
+BR-06 | A Medical Service Request shall have status Accepted only when an authorized Medical Service Staff member has accepted responsibility for processing it. Accepted shall not indicate patient arrival or service execution.
+BR-07 | A Medical Service Request shall have status In Progress only after the responsible Medical Service Staff member records that execution has started.
+BR-08 | A Medical Service Request shall have status Completed only after the service has been performed and all result information defined as mandatory for that service has been recorded.
+BR-09 | Medical Service Staff shall view only patient information necessary for performing the Medical Service associated with the selected request.
+BR-10 | An authorized Doctor shall directly edit or cancel a Medical Service Request only while its status is Ordered.
+BR-11 | A staff member cannot be assigned to two overlapping shifts on the same day.
+BR-12 | Staff working a Night shift must have a minimum rest period of 12 consecutive hours before starting the next shift.
+BR-13 | Original request information shall not be overwritten when a Medical Service Request is In Progress or Completed. Additional service requirements shall be recorded as separate requests.
+BR-14 | Total working hours for a staff member must not exceed 48 hours per week
+BR-15 | Each Medical Service Result shall contain common result metadata and content appropriate to its Medical Service type. Different service types may require different result-content structures.
+BR-16 | Medical Service Staff may record execution information, results, attachments, and inability-to-perform information. They shall not record or determine the patientâ€™s clinical treatment decision.
+BR-17 | A Medical Service Request shall not be marked Completed when the requested service has not been performed. An inability to perform or complete the service shall have a recorded reason.
+BR-18 | Each Medical Service Result shall reference exactly one Patient, one Encounter, and one originating Medical Service Request.
+BR-19 | Schedule change or leave requests must be submitted and processed at least 24 hours prior to the shift start time.
+BR-20 | Replacement staff must hold the same role/specialization (e.g., Specialist Doctor A can only be replaced by Specialist Doctor A).
+BR-21 | A result in the Action needed state shall remain in that state until the Responsible Doctor records a clinical handling decision and confirms processing. Opening or viewing the result shall not change this state.
+BR-22 | The Doctor who creates a Medical Service Request shall be recorded as the Responsible Doctor for its result.
+BR-23 | Swap requests must be pre-confirmed by the designated replacement staff before Manager review.
+BR-24 | A Follow-up Request shall be stored separately from an Appointment and shall contain the follow-up reason, requested timing, and Follow-up Priority. The actual appointment date and time shall be determined through the Appointment workflow.
+BR-25 | Completing a treatment Medical Service shall not automatically create a Follow-up Request or require the patient to return to the Doctor.
+BR-26 | Only the Responsible Doctor shall confirm Encounter completion. Completion shall be blocked while a required service remains unfinished within the current Encounter, a required result remains unprocessed, or required clinical documentation is missing. Required documentation includes treatment decisions and follow-up information where applicable.
+BR-27 | Handling Notes are mandatory when transitioning feedback status to "Resolved".
+BR-28 | The Medical Service Queue shall contain Accepted requests whose execution has not started. Queue membership shall not indicate that the patient is physically present.
+BR-29 | Feedback categorized as "Urgent Complaint" must be processed and updated within 48 hours of submission
+BR-30 | Modifications to a shift occurring within 12 hours require mandatory confirmation prompt before saving.
+BR-31 | A Patient shall view only medical visit history and results associated with their own patient profile and permitted for patient access.
+BR-32 | Each clinical examination entry, diagnosis entry, and treatment decision shall reference exactly one Patient and one Encounter and identify the documenting Doctor and recording timestamp.
+BR-33 | Clinical examination findings, diagnoses, and treatment decisions shall be recorded or updated only by a Doctor authorized for the Encounter and only while the Encounter is active.
+BR-34 | Updating a diagnosis shall preserve the previous information, updated information, updating Doctor, and update timestamp.
+BR-35 | A Doctor shall view a patientâ€™s medical record only when authorized through a valid care assignment or recorded clinical responsibility. Access shall remain within the Doctorâ€™s permitted scope.
+BR-36 | Public medical information shall contain only information designated for public access and shall not disclose patient-specific information or internal clinical records.
+BR-37 | Editing a Medical Service Request shall preserve its identity, Patient, Encounter, and requesting Doctor. The previous and updated values, editor, and update timestamp shall be retained.
+BR-38 | Cancelling a Medical Service Request shall retain the request record and record the cancellation reason, cancelling Doctor, and cancellation timestamp. A Cancelled request shall not be accepted, started, or completed.
+BR-39 | Each result-handling confirmation shall identify the reviewed result version, handling decision, confirming Doctor, and confirmation timestamp. Confirmation of an earlier version shall not mark a newer, unreviewed version as processed.
+BR-40 | Each Medical Service catalogue entry shall have a unique, stable identifier that shall not be reused for a different service.
+BR-41 | Updating a Medical Service catalogue entry shall not rewrite historical request or result information. Making a service unavailable for new ordering shall prevent new requests for it without automatically cancelling existing requests or removing historical results.
+BR-42 | Sign-in shall require valid credentials and an account permitted to access the system. Successful sign-in shall grant only the permissions assigned to that account.
+BR-43 | The personal work schedule function shall display only assignments associated with the signed-in staff profile. Viewing the schedule shall not permit the Staff member to modify those assignments.
+BR-44 | A schedule change request shall be submitted at least one week before the requested change takes effect.
+BR-45 | A Staff member shall submit schedule change requests only for their own assignments. Each request shall identify the affected assignment, requested change, reason, requester, and submission time. Submission shall leave the request pending Manager review and shall not itself modify the assignment.
+BR-46 | Each patient account shall have a unique account identifier and unique sign-in credential within the system. The system shall not create multiple patient accounts using the same unique credential.
+BR-47 | A patient account shall be associated with exactly one Patient profile. A Patient profile shall not be created without an associated patient account when the profile is created through patient account registration.
+BR-48 | The Doctor List shall display only doctors whose profiles are designated as available for public viewing. Patient-specific information and internal staff information shall not be included in the list.
+BR-49 | A User shall view only the personal profile associated with the currently signed-in account. A Patient shall not access another User's personal profile.
+BR-50 | Updating personal information shall preserve the User's identity and patient profile identifier. Personal information updates shall not create a new User profile.
+BR-51 | Medical visit history displayed to a Patient shall contain only visits associated with that Patient's profile. The system shall not disclose another Patient's visit history.
+BR-52 | Viewing a Medical Service Result shall not change its processing, handling, or confirmation state.
+BR-53 | A Patient shall access only appointments associated with their own Patient profile.
+BR-54 | An upcoming appointment shall have a scheduled future date and time and a status that permits the Patient to view it as an upcoming appointment.
+BR-55 | A Patient may cancel an appointment only while the appointment status permits cancellation and before the applicable cancellation deadline.
+BR-56 | Appointment cancellation shall retain the appointment record and record the cancellation status, cancelling actor, cancellation timestamp, and cancellation reason where required. A cancelled appointment shall no longer be active for execution.
+BR-57 | A Patient may reschedule an appointment only while the appointment status permits rescheduling and before the applicable rescheduling deadline.
+BR-58 | An Appointment shall be assigned to one valid time slot, and conflicting appointments for the same Doctor and time shall not be allowed when the Doctor's schedule does not permit concurrent appointments.
+BR-59 | Rescheduling an Appointment shall preserve the Appointment identity and Patient association and shall record the updated appointment date and time.
+BR-60 | A new Appointment shall reference exactly one Patient, one Doctor, one Medical Service, and one scheduled date and time.
+BR-61 | The system shall create an Appointment only for a time slot that is available at the time the booking is confirmed.
+BR-62 | A Patient shall not create multiple active appointments for the same Patient, Doctor, Medical Service, date, and time.
+BR-63 | An authorized Receptionist may create an Appointment on behalf of a Patient and shall be recorded as the staff member who created the Appointment.
+BR-64 | A walk-in Appointment shall still be represented as an Appointment and shall contain the required Patient, Doctor, Medical Service, and scheduling information.
+BR-65 | A Receptionist shall access information only within the scope of functions and data they are authorized to manage.
+BR-66 | Staff shall view only information necessary for appointment management and processing.
+BR-67 | Patient information displayed to a Receptionist shall not include clinical information unless it is specifically required and authorized for the Receptionist's operational responsibility.
+BR-68 | Updating a Patient profile shall preserve the Patient identity and existing Patient profile. The system shall retain the previous and updated values, updating staff member, and update timestamp for auditable profile changes.
+BR-69 | Each Patient shall have one unique Patient profile within the hospital system. The system shall not create a duplicate Patient profile for an existing Patient.
+BR-70 | Creation of a Patient profile shall record the staff member who created it and the creation timestamp for audit purposes.
+BR-71 | A walk-in Appointment shall be identified as a walk-in appointment and shall be created through the walk-in appointment workflow.
+BR-72 | An Appointment shall be checked in only when it is valid and eligible for check-in. Cancelled or already checked-in appointments shall not be checked in again.
+BR-73 | Each successful check-in shall record the check-in timestamp and the staff member who performed the check-in.
+BR-74 | A successful check-in shall record the Patient's arrival for the Appointment but shall not by itself indicate that a medical examination or treatment has started.
+BR-75 | A shift template must have a valid working period. The shift start and end times must be reasonably defined.
+BR-76 | Break times must not alter the total working time of the shift.
+BR-77 | Adjusting the work shift configuration must not affect existing work shifts.
+BR-78 | The new Work-Time Policy configuration must not arbitrarily alter recorded timekeeping data or work history.
+BR-79 | The rules regarding working hours, days off, and public holidays must remain consistent from year to year.
+BR-80 | Each Work-Time Policy must clearly distinguish between specific groups of internal employees and the applicable timeframes.
+BR-81 | The maximum number of appointments per shift/day must be a positive integer and fall within the limits permitted by the system.
+BR-82 | The appointment duration must be greater than 0 and have a specified time unit.
+BR-83 | The new appointment rules must be implemented after the latest appointment has been finally conducted.
+BR-84 | The service code must be unique within the system
+BR-85 | The price of the Medical Service must not be a negative number.
+BR-86 | The service code must remain unique if the system allows the service code to be edited.
+BR-87 | Accounts may only be created for internal employees who fully meet the requirements for account creation.
+BR-88 | The login identifier must be unique within the system's identification scope.
+BR-89 | The system must verify the existence of the corresponding internal account immediately after identifying the employee and before requesting the Admin to complete the account creation details.
+BR-90 | Admins must not use the "Create Internal Account" function to create Patient or Guest accounts.
+BR-91 | The Account ID must not be changed when updating the Internal Account.
+BR-92 | Administrators must not use the "Update Internal Account" function to change an account's password or active status.
+--- TABLE END ---
+
+5.2 Common Requirements
+--- TABLE START ---
+ID | Use Case | Feature | Use Case Description
+01 | Sign In | User Accounts and Profiles | The user provides valid credentials to access the system according to the assigned role.
+02 | Register Patient Account | User Accounts and Profiles | Guest provides required registration information and creates a patient account.
+03 | View Personal Profile | User Accounts and Profiles | Users view their personal profile and account information.
+04 | Update Personal Information | User Accounts and Profiles | User updates permitted personal information.
+73 | Log Out | User Accounts and Profiles | The authenticated user logs out of the hospital management system and The system terminates the current authenticated session
+74 | Forgot password | User Accounts and Profiles | The account holder requests a password reset when they cannot remember their current password
+--- TABLE END ---
+
+5.3 Application Messages List
+--- TABLE START ---
+# | Message code | Message Type | Context | Content
+1 | MSG03 | In line | No doctor information is currently available for public access | No doctors are available to display.
+2 | MSG04 | In red, in the profile information area | Patient profile information cannot be retrieved | Canâ€™t retrieve your information.
+3 | MSG05 | In line | Patient has no medical visit history | No medical visits to display.
+4 | MSG06 | In line | Patient has no upcoming appointments | No upcoming appointments to display.
+5 | MSG07 | In line | The selected appointment does not exist | The appointment cannot be found.
+6 | MSG08 | In line | No appointments are available within the Receptionist's permitted scope | No appointments are available.
+7 | MSG09 | In line | The Appointment does not exist when searched by the Receptionist | No matching appointment can be found.
+--- TABLE END ---
+

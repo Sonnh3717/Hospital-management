@@ -6,9 +6,12 @@ import Button from '../ui/Button.jsx';
 import Field from '../ui/Field.jsx';
 
 const destinations = {
+  ADMIN: '/admin/dashboard',
+  MANAGER: '/manager/dashboard',
   RECEPTIONIST: '/reception/appointments',
   DOCTOR: '/doctor/patients',
   MEDICAL_SERVICE_STAFF: '/services/queue',
+  PATIENT: '/patient/dashboard',
 };
 
 export default function LoginDialog({ open, onClose, redirect = true }) {
@@ -42,47 +45,54 @@ export default function LoginDialog({ open, onClose, redirect = true }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Đăng nhập SWD Care" busy={busy}>
+    <Modal open={open} onClose={onClose} title="Đăng nhập Bệnh viện Da liễu" busy={busy}>
       <form onSubmit={submit} className="clinical-stack">
         <p className="clinical-muted">
-          Đăng nhập bằng tài khoản được cấp để truy cập công việc theo vai trò
-          của bạn.
+          Đăng nhập bằng tài khoản (Người bệnh hoặc Nhân viên y tế) để tiếp tục.
         </p>
-        {(error || sessionError) && (
-          <div className="clinical-alert clinical-alert--error" role="alert">
-            {error?.message || sessionError}
+        {sessionError && !error && (
+          <div className="clinical-alert clinical-alert--warning" role="alert">
+            {sessionError}
           </div>
         )}
-        <Field
-          label="Tên đăng nhập hoặc email"
-          required
-          error={error?.fieldErrors?.username}
-        >
+        {error && (
+          <div className="clinical-alert clinical-alert--error" role="alert">
+            {error.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'}
+          </div>
+        )}
+        <Field label="Tên đăng nhập hoặc Email" required>
           <input
+            type="text"
+            name="username"
             autoComplete="username"
             value={credentials.username}
-            onChange={(event) =>
-              setCredentials({ ...credentials, username: event.target.value })
+            onChange={(e) =>
+              setCredentials((prev) => ({ ...prev, username: e.target.value }))
             }
-            maxLength={254}
             required
+            autoFocus
           />
         </Field>
-        <Field label="Mật khẩu" required error={error?.fieldErrors?.password}>
+        <Field label="Mật khẩu" required>
           <input
             type="password"
+            name="password"
             autoComplete="current-password"
             value={credentials.password}
-            onChange={(event) =>
-              setCredentials({ ...credentials, password: event.target.value })
+            onChange={(e) =>
+              setCredentials((prev) => ({ ...prev, password: e.target.value }))
             }
-            maxLength={128}
             required
           />
         </Field>
-        <Button type="submit" loading={busy}>
-          Đăng nhập
-        </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+          <Button variant="ghost" type="button" onClick={onClose} disabled={busy}>
+            Hủy
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? 'Đang xác thực…' : 'Đăng nhập'}
+          </Button>
+        </div>
       </form>
     </Modal>
   );

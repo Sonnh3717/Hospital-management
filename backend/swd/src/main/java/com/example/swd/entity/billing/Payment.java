@@ -37,8 +37,8 @@ public class Payment {
     @Column(name = "payment_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "invoice_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "invoice_id", nullable = true)
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

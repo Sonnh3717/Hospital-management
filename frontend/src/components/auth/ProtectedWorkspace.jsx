@@ -6,22 +6,24 @@ import LoginDialog from './LoginDialog.jsx';
 import Button from '../ui/Button.jsx';
 import EmptyState from '../ui/EmptyState.jsx';
 
-export default function ProtectedWorkspace({ role }) {
+export default function ProtectedWorkspace({ role, allowedRoles }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [signInOpen, setSignInOpen] = useState(true);
+
   if (loading)
     return (
       <div className="clinical-gate" role="status">
         Đang kiểm tra phiên đăng nhập…
       </div>
     );
+
   if (!user)
     return (
       <div className="clinical-gate">
         <EmptyState
           title="Vui lòng đăng nhập"
-          description="Màn hình này dành cho tài khoản nhân viên được phân quyền."
+          description="Màn hình này dành cho người dùng được phân quyền trong hệ thống."
         >
           <Button onClick={() => setSignInOpen(true)}>Đăng nhập</Button>
           <Link to="/">Về trang chủ</Link>
@@ -33,7 +35,11 @@ export default function ProtectedWorkspace({ role }) {
         />
       </div>
     );
-  if (user.role !== role)
+
+  const roles = allowedRoles || (role ? [role] : []);
+  const hasAccess = roles.length === 0 || roles.includes(user.role);
+
+  if (!hasAccess)
     return (
       <div className="clinical-gate">
         <EmptyState
@@ -44,8 +50,7 @@ export default function ProtectedWorkspace({ role }) {
         </EmptyState>
       </div>
     );
-  // Route navigation is checked by the active page's unsaved-change blocker.
-  // The public layout revokes the session only after navigation is allowed.
+
   return (
     <WorkspaceLayout
       user={user}
