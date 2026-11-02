@@ -1,4 +1,4 @@
-package com.example.swd.service;
+package com.example.swd.integration;
 
 import com.example.swd.dto.response.BookingCheckoutResponse;
 import com.example.swd.entity.appointment.Appointment;

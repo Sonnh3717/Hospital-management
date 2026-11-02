@@ -44,6 +44,8 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/patients/register", "/api/patients/send-otp", "/api/patients/verify-otp").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/patients/check-username").permitAll()
                                                 .requestMatchers("/api/auth/me", "/api/auth/logout").authenticated()
                                                 .requestMatchers("/api/reception/**").hasRole("RECEPTIONIST")
                                                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")

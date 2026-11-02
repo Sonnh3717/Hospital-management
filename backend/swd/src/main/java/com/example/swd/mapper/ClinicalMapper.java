@@ -1,4 +1,4 @@
-package com.example.swd.service;
+package com.example.swd.mapper;
 
 import com.example.swd.dto.response.ClinicalViews.*;
 import com.example.swd.entity.appointment.Appointment;
@@ -108,5 +108,5 @@ public class ClinicalMapper {
             WorkflowMapper.slot(slot,doctor,(int)Math.max(0,slot.getCapacity()-appointments.countActiveBySlotId(slot.getId()))),WorkflowMapper.timestamp(appointment.getCheckedInAt()),
             encounter==null?null:encounter.getId(),encounter==null?null:encounter.getStatus().name(),encounter==null?"WAITING":encounter.getStatus().name(),pending,unhandled,unable);
     }
-    static boolean blank(String value) {return value==null || value.isBlank();}
+    public static boolean blank(String value) {return value==null || value.isBlank();}
 }

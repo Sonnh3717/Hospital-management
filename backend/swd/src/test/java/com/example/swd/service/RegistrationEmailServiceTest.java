@@ -1,4 +1,5 @@
 package com.example.swd.service;
+import com.example.swd.integration.RegistrationEmailService;
 
 import com.example.swd.exception.WorkflowException;
 import org.junit.jupiter.api.Test;

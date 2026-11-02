@@ -1,4 +1,6 @@
 package com.example.swd.service;
+import com.example.swd.integration.RegistrationEmailService;
+import com.example.swd.service.impl.PatientRegistrationServiceImpl;
 
 import com.example.swd.dto.request.RegistrationCommands;
 import com.example.swd.entity.common.enums.ActiveStatus;
@@ -45,7 +47,7 @@ class PatientRegistrationServiceTest {
     LocalDateTime now = LocalDateTime.parse("2026-10-13T02:00:00");
 
     @BeforeEach void setup() {
-        registration = new PatientRegistrationService(accounts, patients, roles, verifications, encoder, email, clock);
+        registration = new PatientRegistrationServiceImpl(accounts, patients, roles, verifications, encoder, email, clock);
         role = new Role(); role.setId((short) 6); role.setRoleCode(Role.RoleCode.PATIENT);
         account = new UserAccount(); account.setId(10L); account.setRole(role); account.setStatus(ActiveStatus.INACTIVE);
         account.setUsername("patient.demo"); account.setLoginEmail("patient@example.test");

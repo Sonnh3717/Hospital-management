@@ -1,4 +1,4 @@
-package com.example.swd.controller;
+package com.example.swd.controller.auth;
 
 import com.example.swd.dto.request.LoginRequest;
 import com.example.swd.dto.response.LoginResponse;

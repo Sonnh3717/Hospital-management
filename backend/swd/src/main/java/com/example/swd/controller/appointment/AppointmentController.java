@@ -1,4 +1,4 @@
-package com.example.swd.controller;
+package com.example.swd.controller.appointment;
 
 import com.example.swd.dto.request.CancelAppointmentRequest;
 import com.example.swd.dto.request.CreateAppointmentRequest;
@@ -14,7 +14,7 @@ import com.example.swd.repository.AppointmentRepository;
 import com.example.swd.repository.UserAccountRepository;
 import com.example.swd.security.StaffPrincipal;
 import com.example.swd.service.AppointmentService;
-import com.example.swd.service.PayOSService;
+import com.example.swd.integration.PayOSService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;

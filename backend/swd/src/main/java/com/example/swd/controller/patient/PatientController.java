@@ -1,4 +1,4 @@
-package com.example.swd.controller;
+package com.example.swd.controller.patient;
 
 import com.example.swd.dto.request.RegistrationCommands;
 import com.example.swd.service.PatientRegistrationService;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
-public class PatientRegistrationController {
+@RequestMapping("/api/patients")
+public class PatientController {
     private final PatientRegistrationService registration;
 
-    public PatientRegistrationController(PatientRegistrationService registration) {
+    public PatientController(PatientRegistrationService registration) {
         this.registration = registration;
     }
 

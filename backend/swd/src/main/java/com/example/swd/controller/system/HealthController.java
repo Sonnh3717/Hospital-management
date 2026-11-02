@@ -1,4 +1,4 @@
-package com.example.swd.controller;
+package com.example.swd.controller.system;
 
 import com.example.swd.dto.response.HealthResponse;
 import com.example.swd.service.SystemStatusService;

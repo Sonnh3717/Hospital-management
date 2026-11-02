@@ -1,4 +1,5 @@
 package com.example.swd.service;
+import com.example.swd.integration.PayOSService;
 
 import com.example.swd.entity.appointment.Appointment;
 import com.example.swd.entity.appointment.AppointmentRule;
