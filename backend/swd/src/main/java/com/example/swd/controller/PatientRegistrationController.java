@@ -14,14 +14,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class PatientRegistrationController {
     private final PatientRegistrationService registration;
-    public PatientRegistrationController(PatientRegistrationService registration) { this.registration = registration; }
+
+    public PatientRegistrationController(PatientRegistrationService registration) {
+        this.registration = registration;
+    }
 
     @PostMapping("/register")
-    PatientRegistrationService.OtpView register(@Valid @RequestBody RegistrationCommands.Register input) { return registration.register(input); }
+    PatientRegistrationService.OtpView register(@Valid @RequestBody RegistrationCommands.Register input) {
+        return registration.register(input);
+    }
+
     @PostMapping("/send-otp")
-    PatientRegistrationService.OtpView sendOtp(@Valid @RequestBody RegistrationCommands.SendOtp input) { return registration.sendOtp(input); }
+    PatientRegistrationService.OtpView sendOtp(@Valid @RequestBody RegistrationCommands.SendOtp input) {
+        return registration.sendOtp(input);
+    }
+
     @PostMapping("/verify-otp")
-    PatientRegistrationService.VerifiedView verifyOtp(@Valid @RequestBody RegistrationCommands.VerifyOtp input) { return registration.verifyOtp(input); }
+    PatientRegistrationService.VerifiedView verifyOtp(@Valid @RequestBody RegistrationCommands.VerifyOtp input) {
+        return registration.verifyOtp(input);
+    }
+
     @GetMapping("/check-username")
-    boolean checkUsername(@RequestParam(required = false) String username) { return registration.usernameAvailable(username); }
+    boolean checkUsername(@RequestParam(required = false) String username) {
+        return registration.usernameAvailable(username);
+    }
 }

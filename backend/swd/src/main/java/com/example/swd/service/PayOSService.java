@@ -61,7 +61,8 @@ public class PayOSService {
 
         // Sinh link checkout payOS (mô phỏng chuẩn định dạng VietQR payOS)
         String checkoutUrl = "https://pay.payos.vn/web/" + orderCode;
-        String qrCodeText = "00020101021238540010A000000727012400069704220110" + orderCode + "5303704540" + amount.intValue() + "5802VN62150811HOSPITAL" + appointment.getId() + "6304ABCD";
+        String qrCodeText = "00020101021238540010A000000727012400069704220110" + orderCode + "5303704540"
+                + amount.intValue() + "5802VN62150811HOSPITAL" + appointment.getId() + "6304ABCD";
 
         paymentRepository.save(payment);
 
@@ -92,7 +93,8 @@ public class PayOSService {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> data = (Map<String, Object>) webhookData.get("data");
-        if (data == null) return false;
+        if (data == null)
+            return false;
 
         String orderCode = String.valueOf(data.get("orderCode"));
         var paymentOpt = paymentRepository.findByProviderAndProviderTransactionId("PAYOS", orderCode);
@@ -121,7 +123,8 @@ public class PayOSService {
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
+                if (hex.length() == 1)
+                    hexString.append('0');
                 hexString.append(hex);
             }
             return hexString.toString().equalsIgnoreCase(signature);
@@ -131,4 +134,3 @@ public class PayOSService {
         }
     }
 }
-

@@ -97,7 +97,8 @@ public class AppointmentController {
             @PathVariable Long id,
             @RequestBody(required = false) UndoCheckInRequest request,
             @AuthenticationPrincipal StaffPrincipal principal) {
-        if (request == null) request = new UndoCheckInRequest();
+        if (request == null)
+            request = new UndoCheckInRequest();
         AppointmentResponse response = appointmentService.undoCheckIn(id, request, principal.accountId());
         return ResponseEntity.ok(ApiResponse.ok("Hoàn tác check-in thành công", response));
     }
@@ -112,7 +113,8 @@ public class AppointmentController {
             @Valid @RequestBody CancelAppointmentRequest request,
             @AuthenticationPrincipal StaffPrincipal principal) {
         boolean isPatient = "PATIENT".equalsIgnoreCase(principal.role());
-        AppointmentResponse response = appointmentService.cancelAppointment(id, request, principal.accountId(), isPatient);
+        AppointmentResponse response = appointmentService.cancelAppointment(id, request, principal.accountId(),
+                isPatient);
         return ResponseEntity.ok(ApiResponse.ok("Hủy lịch hẹn thành công", response));
     }
 
@@ -126,7 +128,8 @@ public class AppointmentController {
             @Valid @RequestBody RescheduleRequest request,
             @AuthenticationPrincipal StaffPrincipal principal) {
         boolean isPatient = "PATIENT".equalsIgnoreCase(principal.role());
-        AppointmentResponse response = appointmentService.rescheduleAppointment(id, request, principal.accountId(), isPatient);
+        AppointmentResponse response = appointmentService.rescheduleAppointment(id, request, principal.accountId(),
+                isPatient);
         return ResponseEntity.ok(ApiResponse.ok("Đổi lịch hẹn thành công", response));
     }
 
@@ -171,4 +174,3 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.ok(list));
     }
 }
-

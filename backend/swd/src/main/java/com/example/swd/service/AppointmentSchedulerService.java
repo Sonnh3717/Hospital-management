@@ -19,7 +19,8 @@ public class AppointmentSchedulerService {
     private final AppointmentRepository appointmentRepository;
 
     /**
-     * Quét định kỳ kiểm tra các ca làm việc đã kết thúc để đánh dấu NO_SHOW cho các cuộc hẹn không check-in.
+     * Quét định kỳ kiểm tra các ca làm việc đã kết thúc để đánh dấu NO_SHOW cho các
+     * cuộc hẹn không check-in.
      */
     @Scheduled(cron = "0 0/15 * * * ?") // Chạy mỗi 15 phút
     @Transactional
@@ -35,4 +36,3 @@ public class AppointmentSchedulerService {
         return pendingAppointments.size();
     }
 }
-

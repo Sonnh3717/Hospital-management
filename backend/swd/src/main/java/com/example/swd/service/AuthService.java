@@ -13,6 +13,7 @@ import com.example.swd.repository.AuthSessionRepository;
 import com.example.swd.repository.HospitalStaffRepository;
 import com.example.swd.repository.PatientRepository;
 import com.example.swd.repository.UserAccountRepository;
+import com.example.swd.security.StaffPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -58,6 +59,7 @@ public class AuthService {
         authSessionRepository.save(session);
 
         UserInfoResponse userInfo = buildUserInfo(account);
+
         return LoginResponse.builder()
                 .token(session.getId())
                 .user(userInfo)
@@ -79,6 +81,36 @@ public class AuthService {
         }
 
         return buildUserInfo(session.getUserAccount());
+    }
+
+    @Transactional(readOnly = true)
+    public StaffPrincipal authenticate(String token) {
+        if (token == null || token.isBlank()) {
+            throw new WorkflowException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại.");
+        }
+        AuthSession session = authSessionRepository.findForAuthentication(token)
+                .orElseThrow(() -> new WorkflowException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+        if (session.getRevokedAt() != null || !session.getExpiresAt().isAfter(LocalDateTime.now())) {
+            throw new WorkflowException(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại.");
+        }
+        UserAccount account = session.getUserAccount();
+        String role = account.getRole().getRoleCode().name();
+        Long staffId = null;
+        Long patientId = null;
+        String fullName = account.getUsername();
+
+        Optional<HospitalStaff> staff = hospitalStaffRepository.findByUserAccount_Id(account.getId());
+        if (staff.isPresent()) {
+            staffId = staff.get().getId();
+            fullName = staff.get().getFullName();
+        } else {
+            Optional<Patient> patient = patientRepository.findByUserAccount_Id(account.getId());
+            if (patient.isPresent()) {
+                patientId = patient.get().getId();
+                fullName = patient.get().getFullName();
+            }
+        }
+        return new StaffPrincipal(account.getId(), staffId, account.getUsername(), fullName, role, patientId);
     }
 
     @Transactional

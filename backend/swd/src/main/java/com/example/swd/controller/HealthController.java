@@ -20,4 +20,3 @@ public class HealthController {
         return systemStatusService.getStatus();
     }
 }
-

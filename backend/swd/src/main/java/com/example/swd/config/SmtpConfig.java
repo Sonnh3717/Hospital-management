@@ -13,7 +13,9 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 @PropertySource("classpath:smtp.properties")
 public class SmtpConfig {
     @Bean
-    Clock registrationClock() { return Clock.systemUTC(); }
+    Clock registrationClock() {
+        return Clock.systemUTC();
+    }
 
     @Bean
     JavaMailSender registrationMailSender(
