@@ -351,6 +351,7 @@ public class AppointmentServiceImpl implements com.example.swd.service.Appointme
     private AppointmentResponse mapToResponse(Appointment a) {
         var slot = a.getAppointmentSlot();
         var doctor = slot.getWorkSchedule().getStaff();
+        var encounter = encounterRepository.findByAppointment_Id(a.getId()).orElse(null);
         return AppointmentResponse.builder()
                 .id(a.getId())
                 .appointmentCode(a.getAppointmentCode())
@@ -374,6 +375,8 @@ public class AppointmentServiceImpl implements com.example.swd.service.Appointme
                 .cancellationReason(a.getCancellationReason())
                 .lastRescheduledAt(a.getLastRescheduledAt())
                 .lastCheckInReversedAt(a.getLastCheckInReversedAt())
+                .encounterId(encounter != null ? encounter.getId() : null)
+                .encounterStatus(encounter != null ? encounter.getStatus().name() : null)
                 .build();
     }
 }

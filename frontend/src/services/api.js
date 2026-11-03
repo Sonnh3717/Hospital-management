@@ -95,6 +95,10 @@ export const patientApi = {
     const response = await api.get('/patient/appointments');
     return response.data;
   },
+  getClinicalSummary: async (appointmentId) => {
+    const response = await api.get(`/patient/appointments/${appointmentId}/clinical-summary`);
+    return response.data;
+  },
 };
 
 // ==================== APPOINTMENT API ====================
@@ -203,6 +207,58 @@ export const receptionApi = {
 export const doctorApi = {
   getAppointments: async (params = {}) => {
     const response = await api.get('/doctor/appointments', { params });
+    return response.data;
+  },
+  getWorklist: async (params = {}) => {
+    const response = await api.get('/doctor/worklist', { params });
+    return response.data;
+  },
+  startEncounter: async (appointmentId) => {
+    const response = await api.post(`/doctor/appointments/${appointmentId}/start`);
+    return response.data;
+  },
+  getEncounter: async (encounterId) => {
+    const response = await api.get(`/doctor/encounters/${encounterId}`);
+    return response.data;
+  },
+  getPatientHistory: async (encounterId) => {
+    const response = await api.get(`/doctor/encounters/${encounterId}/history`);
+    return response.data;
+  },
+  getCatalogue: async () => {
+    const response = await api.get('/doctor/catalogue');
+    return response.data;
+  },
+  saveExamination: async (encounterId, data) => {
+    const response = await api.put(`/doctor/encounters/${encounterId}/examination`, data);
+    return response.data;
+  },
+  saveTreatment: async (encounterId, data) => {
+    const response = await api.put(`/doctor/encounters/${encounterId}/treatment`, data);
+    return response.data;
+  },
+  createServiceRequest: async (encounterId, data) => {
+    const response = await api.post(`/doctor/encounters/${encounterId}/requests`, data);
+    return response.data;
+  },
+  editServiceRequest: async (encounterId, requestId, data) => {
+    const response = await api.put(`/doctor/encounters/${encounterId}/requests/${requestId}`, data);
+    return response.data;
+  },
+  cancelServiceRequest: async (encounterId, requestId, reason) => {
+    const response = await api.post(`/doctor/encounters/${encounterId}/requests/${requestId}/cancel`, { reason });
+    return response.data;
+  },
+  reviewServiceResult: async (encounterId, resultId, handlingDecision) => {
+    const response = await api.post(`/doctor/encounters/${encounterId}/results/${resultId}/review`, { handlingDecision });
+    return response.data;
+  },
+  completeEncounter: async (encounterId) => {
+    const response = await api.post(`/doctor/encounters/${encounterId}/complete`);
+    return response.data;
+  },
+  getClinicalSummary: async (appointmentId) => {
+    const response = await api.get(`/patient/appointments/${appointmentId}/clinical-summary`);
     return response.data;
   },
 };

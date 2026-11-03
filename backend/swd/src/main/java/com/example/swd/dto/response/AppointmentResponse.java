@@ -36,4 +36,7 @@ public class AppointmentResponse {
 
     private LocalDateTime lastRescheduledAt;
     private LocalDateTime lastCheckInReversedAt;
+
+    private Long encounterId;
+    private String encounterStatus;
 }

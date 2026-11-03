@@ -5,7 +5,7 @@
 --
 -- Credential convention for all showcase accounts:
 --   Password (clear text): Password123!
---   BCrypt Hash: $2a$10$d8r7mN7KjZq0mE1bO5yI1uQv3z9dM.P1vVzVzG8z6r3vUv9uX4qG
+--   BCrypt Hash: $2a$10$1ESQsz5IwHnsHmOb8MEVgudoDo9GhDAeyTALlYjChTvPUiQAS6btu
 --
 -- Accounts Seeded:
 --   1. Patient:      username 'patient'      | email 'patient@hospital.vn'      | role PATIENT
@@ -19,7 +19,7 @@ SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 SET time_zone = '+00:00';
 
 -- Biến lưu hash BCrypt cho 'Password123!'
-SET @demo_password_hash = '$2a$10$d8r7mN7KjZq0mE1bO5yI1uQv3z9dM.P1vVzVzG8z6r3vUv9uX4qG';
+SET @demo_password_hash = '$2a$10$1ESQsz5IwHnsHmOb8MEVgudoDo9GhDAeyTALlYjChTvPUiQAS6btu';
 
 -- Thiết lập mốc thời gian động theo giờ Việt Nam (UTC+7)
 SET @vn_today = DATE(DATE_ADD(UTC_TIMESTAMP(), INTERVAL 7 HOUR));

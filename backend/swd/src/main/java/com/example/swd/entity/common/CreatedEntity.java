@@ -15,6 +15,6 @@ public abstract class CreatedEntity {
 
     @Generated(event = EventType.INSERT)
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false,
-            columnDefinition = "DATETIME(6)")
+            columnDefinition = "DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)")
     private LocalDateTime createdAt;
 }

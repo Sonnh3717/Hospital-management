@@ -15,6 +15,6 @@ public abstract class AuditedEntity extends CreatedEntity {
 
     @Generated(event = {EventType.INSERT, EventType.UPDATE})
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false,
-            columnDefinition = "DATETIME(6)")
+            columnDefinition = "DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
     private LocalDateTime updatedAt;
 }

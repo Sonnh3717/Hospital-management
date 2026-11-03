@@ -32,11 +32,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.swd.dto.response.ClinicalViews;
+import com.example.swd.mapper.ClinicalMapper;
+import com.example.swd.repository.EncounterRepository;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
@@ -44,7 +46,42 @@ public class AppointmentController {
     private final AppointmentRepository appointmentRepository;
     private final UserAccountRepository userAccountRepository;
     private final PatientRepository patientRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private MedicalServiceRepository medicalServiceRepository;
+    private EncounterRepository encounterRepository;
+    private ClinicalMapper clinicalMapper;
+
+    public AppointmentController(
+            AppointmentService appointmentService,
+            PayOSService payOSService,
+            AppointmentRepository appointmentRepository,
+            UserAccountRepository userAccountRepository,
+            PatientRepository patientRepository) {
+        this.appointmentService = appointmentService;
+        this.payOSService = payOSService;
+        this.appointmentRepository = appointmentRepository;
+        this.userAccountRepository = userAccountRepository;
+        this.patientRepository = patientRepository;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AppointmentController(
+            AppointmentService appointmentService,
+            PayOSService payOSService,
+            AppointmentRepository appointmentRepository,
+            UserAccountRepository userAccountRepository,
+            PatientRepository patientRepository,
+            MedicalServiceRepository medicalServiceRepository,
+            EncounterRepository encounterRepository,
+            ClinicalMapper clinicalMapper) {
+        this.appointmentService = appointmentService;
+        this.payOSService = payOSService;
+        this.appointmentRepository = appointmentRepository;
+        this.userAccountRepository = userAccountRepository;
+        this.patientRepository = patientRepository;
+        this.medicalServiceRepository = medicalServiceRepository;
+        this.encounterRepository = encounterRepository;
+        this.clinicalMapper = clinicalMapper;
+    }
 
     /**
      * Danh sách dịch vụ y tế cho đặt lịch khám
@@ -185,5 +222,37 @@ public class AppointmentController {
 
         List<AppointmentResponse> list = appointmentService.getAppointmentsByDoctor(targetDocId, from, to);
         return ResponseEntity.ok(ApiResponse.ok(list));
+    }
+
+    /**
+     * Tóm tắt kết quả khám và đơn thuốc cho bệnh nhân
+     */
+    @GetMapping("/patient/appointments/{id}/clinical-summary")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ClinicalViews.EncounterView>> getPatientClinicalSummary(
+            @PathVariable Long id,
+            @AuthenticationPrincipal StaffPrincipal principal) {
+        Appointment appt = appointmentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lịch hẹn."));
+
+        boolean isAdmin = principal != null && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
+        if (!isAdmin && principal != null) {
+            Long patientId = principal.patientId() != null
+                    ? principal.patientId()
+                    : (principal.accountId() != null
+                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId).orElse(null)
+                            : null);
+            if (patientId == null || !patientId.equals(appt.getPatient().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền truy cập hồ sơ này.");
+            }
+        }
+
+        var encounterOpt = encounterRepository.findByAppointment_Id(id);
+        if (encounterOpt.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.ok("Lịch hẹn chưa được bác sĩ khám", null));
+        }
+
+        var encounterView = clinicalMapper.encounter(encounterOpt.get());
+        return ResponseEntity.ok(ApiResponse.ok("Kết quả khám bệnh", encounterView));
     }
 }

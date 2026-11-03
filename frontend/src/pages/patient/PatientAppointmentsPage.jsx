@@ -13,6 +13,8 @@ import {
   EditIcon,
   StethoscopeIcon,
   UserIcon,
+  ClipboardListIcon,
+  PrinterIcon,
 } from '../../components/common/Icons';
 
 export default function PatientAppointmentsPage() {
@@ -24,6 +26,10 @@ export default function PatientAppointmentsPage() {
 
   // Modals
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [clinicalSummaryAppt, setClinicalSummaryAppt] = useState(null);
+  const [clinicalSummaryData, setClinicalSummaryData] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
   const [cancellingAppointment, setCancellingAppointment] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
@@ -274,6 +280,24 @@ export default function PatientAppointmentsPage() {
     }
   };
 
+  // Open Clinical Summary Modal
+  const handleOpenClinicalSummary = async (appt) => {
+    setClinicalSummaryAppt(appt);
+    setClinicalSummaryData(null);
+    setSummaryLoading(true);
+    setSummaryError('');
+    try {
+      const res = await patientApi.getClinicalSummary(appt.id);
+      const data = res?.data || res;
+      setClinicalSummaryData(data);
+    } catch (err) {
+      console.error('Lỗi tải kết quả khám:', err);
+      setSummaryError(err.response?.data?.message || 'Không thể tải kết quả khám và đơn thuốc.');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Toast Alert */}
@@ -443,6 +467,18 @@ export default function PatientAppointmentsPage() {
                       {appt.appointmentCode}
                     </span>
                     {renderStatusBadge(appt.status)}
+                    {appt.encounterStatus === 'COMPLETED' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đã khám xong</span>
+                      </span>
+                    )}
+                    {appt.encounterStatus === 'IN_PROGRESS' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300 animate-pulse">
+                        <StethoscopeIcon className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Bác sĩ đang khám</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* 24h Notice Badge for BOOKED */}
@@ -513,6 +549,16 @@ export default function PatientAppointmentsPage() {
                     <EyeIcon className="w-3.5 h-3.5" />
                     <span>Xem chi tiết</span>
                   </button>
+
+                  {(appt.encounterStatus === 'COMPLETED' || appt.status === 'CHECKED_IN') && (
+                    <button
+                      onClick={() => handleOpenClinicalSummary(appt)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition"
+                    >
+                      <ClipboardListIcon className="w-3.5 h-3.5" />
+                      <span>Kết quả khám & Đơn thuốc</span>
+                    </button>
+                  )}
 
                   {isBooked && (
                     <>
@@ -913,6 +959,217 @@ export default function PatientAppointmentsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== CLINICAL SUMMARY & PRESCRIPTION MODAL ==================== */}
+      {clinicalSummaryAppt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <ClipboardListIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Kết quả Khám bệnh & Đơn thuốc</h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">Mã hẹn: {clinicalSummaryAppt.appointmentCode}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition flex items-center gap-1.5 text-xs font-bold"
+                  title="In đơn thuốc"
+                >
+                  <PrinterIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">In đơn thuốc</span>
+                </button>
+                <button
+                  onClick={() => setClinicalSummaryAppt(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                >
+                  <XIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            {summaryLoading ? (
+              <div className="py-12 text-center text-slate-400 text-sm">
+                Đang tải hồ sơ bệnh án và đơn thuốc điện tử...
+              </div>
+            ) : summaryError ? (
+              <div className="p-4 rounded-2xl bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                {summaryError}
+              </div>
+            ) : !clinicalSummaryData ? (
+              <div className="py-8 text-center text-slate-400 text-xs italic">
+                Lịch hẹn này chưa có dữ liệu khám bệnh hoàn tất từ Bác sĩ phụ trách.
+              </div>
+            ) : (
+              <div className="space-y-6 text-xs">
+                {/* Hospital Badge & Doctor Info */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      Bệnh viện Chuyên khoa Da Liễu
+                    </p>
+                    <h4 className="font-bold text-slate-900 text-sm mt-0.5">
+                      Bác sĩ khám: {clinicalSummaryData.doctor?.fullName || clinicalSummaryAppt.doctorName}
+                    </h4>
+                    <p className="text-sky-600 font-semibold">{clinicalSummaryAppt.specialization || 'Da liễu chuyên sâu'}</p>
+                  </div>
+                  <div className="text-right sm:text-right">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                      {clinicalSummaryData.status === 'COMPLETED' ? 'Đã hoàn tất khám' : 'Đang tiến hành'}
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {clinicalSummaryData.completedAt || clinicalSummaryData.startedAt}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Patient Summary */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block">Bệnh nhân</span>
+                    <strong className="text-slate-900">{clinicalSummaryData.patient?.fullName || clinicalSummaryAppt.patientName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Mã bệnh nhân</span>
+                    <strong className="text-slate-900 font-mono">{clinicalSummaryData.patient?.patientCode || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Số điện thoại</span>
+                    <strong className="text-slate-900">{clinicalSummaryData.patient?.phone || clinicalSummaryAppt.patientPhone}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Giới tính</span>
+                    <strong className="text-slate-900">{clinicalSummaryData.patient?.gender === 'MALE' ? 'Nam' : 'Nữ'}</strong>
+                  </div>
+                </div>
+
+                {/* Diagnoses */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+                    Chẩn đoán bệnh (ICD-10)
+                  </h4>
+                  {clinicalSummaryData.diagnoses && clinicalSummaryData.diagnoses.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {clinicalSummaryData.diagnoses.map((d) => (
+                        <div
+                          key={d.id}
+                          className="p-3 rounded-xl border border-sky-100 bg-sky-50/50 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sky-800 bg-sky-100 px-2 py-0.5 rounded text-[11px]">
+                              {d.diagnosisCode}
+                            </span>
+                            <span className="font-semibold text-slate-800">{d.diagnosisText}</span>
+                          </div>
+                          {d.primary && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                              Chính
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 italic">Chưa có chẩn đoán</p>
+                  )}
+                </div>
+
+                {/* Clinical Findings & Symptoms */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-bold text-slate-700 block">Triệu chứng cơ năng</span>
+                    <p className="text-slate-600 whitespace-pre-wrap">{clinicalSummaryData.symptoms || '—'}</p>
+                  </div>
+                  <div className="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-bold text-slate-700 block">Tổn thương lâm sàng</span>
+                    <p className="text-slate-600 whitespace-pre-wrap">{clinicalSummaryData.clinicalFindings || '—'}</p>
+                  </div>
+                </div>
+
+                {/* Treatment & Prescription */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+                    Toa thuốc & Phác đồ điều trị
+                  </h4>
+                  <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-3">
+                    {clinicalSummaryData.treatment?.decisionText ? (
+                      <div>
+                        <span className="text-[11px] font-bold text-amber-900 block mb-1">Đơn thuốc chỉ định:</span>
+                        <div className="font-mono text-slate-900 whitespace-pre-wrap bg-white p-3 rounded-xl border border-amber-100 text-xs">
+                          {clinicalSummaryData.treatment.decisionText}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-slate-400 italic">Chưa có đơn thuốc</p>
+                    )}
+
+                    {clinicalSummaryData.treatment?.instructions && (
+                      <div>
+                        <span className="text-[11px] font-bold text-amber-900 block mb-1">Lời dặn của Bác sĩ:</span>
+                        <p className="text-slate-700 whitespace-pre-wrap text-xs">
+                          {clinicalSummaryData.treatment.instructions}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Follow-up recommendation */}
+                {clinicalSummaryData.followUps && clinicalSummaryData.followUps.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+                    <span className="font-bold text-sky-900 block">Lịch hẹn tái khám đề nghị</span>
+                    <p className="text-sky-800">
+                      Lý do: {clinicalSummaryData.followUps[0].reason}
+                    </p>
+                    <p className="text-sky-700 text-[11px]">
+                      Khoảng thời gian: từ <strong>{clinicalSummaryData.followUps[0].requestedFromDate}</strong>
+                      {clinicalSummaryData.followUps[0].requestedToDate && (
+                        <span> đến <strong>{clinicalSummaryData.followUps[0].requestedToDate}</strong></span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Paraclinical Results (if any) */}
+                {clinicalSummaryData.requests && clinicalSummaryData.requests.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+                      Kết quả xét nghiệm & Kỹ thuật
+                    </h4>
+                    <div className="space-y-2">
+                      {clinicalSummaryData.requests.map((r) => (
+                        <div key={r.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900">{r.service?.serviceName}</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {r.status}
+                            </span>
+                          </div>
+                          {r.result?.resultSummary && (
+                            <p className="text-slate-700"><span className="font-semibold">Kết quả:</span> {r.result.resultSummary}</p>
+                          )}
+                          {r.result?.review?.handlingDecision && (
+                            <p className="text-sky-800 text-[11px] italic">
+                              Đánh giá bác sĩ: {r.result.review.handlingDecision}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -251,21 +251,21 @@ export default function LoginPage() {
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => handleDemoFill('patient', 'Password@123')}
+                onClick={() => handleDemoFill('patient', 'Password123!')}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition-colors"
               >
                 Bệnh nhân
               </button>
               <button
                 type="button"
-                onClick={() => handleDemoFill('receptionist', 'Password@123')}
+                onClick={() => handleDemoFill('receptionist', 'Password123!')}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
               >
                 Lễ tân
               </button>
               <button
                 type="button"
-                onClick={() => handleDemoFill('doctor', 'Password@123')}
+                onClick={() => handleDemoFill('doctor', 'Password123!')}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors"
               >
                 Bác sĩ
