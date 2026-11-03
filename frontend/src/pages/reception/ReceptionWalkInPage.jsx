@@ -485,69 +485,39 @@ export default function ReceptionWalkInPage() {
 
     try {
       const fullAddressString = streetAddress.includes('TP.') ? streetAddress : `${streetAddress}, ${ward}, ${province}`;
-      let finalPatientId = selectedPatientId;
+      const isToday = selectedDate === next7Days[0]?.iso;
+      const effectiveSource = isToday ? 'WALK_IN' : 'ASSISTED';
 
-      // 1. If it's a new patient without existing ID, create patient profile first
+      let finalPatientId = selectedPatientId;
+      let newPatientData = null;
+
+      // 1. If it's a new patient without existing ID, send inline patient object
       if (patientMode === 'new' && !finalPatientId) {
-        try {
-          const createPatientPayload = {
-            fullName: fullName.trim(),
-            dateOfBirth: dateOfBirth,
-            gender: gender,
-            phone: phoneNumber.trim(),
-            contactEmail: email.trim() || undefined,
-            address: fullAddressString,
-            emergencyContactName: emergencyContactName.trim() || undefined,
-            emergencyContactPhone: emergencyContactPhone.trim() || undefined,
-          };
-          const createdRes = await receptionApi.createPatient(createPatientPayload);
-          finalPatientId = createdRes?.data?.id || createdRes?.id;
-        } catch (err) {
-          console.warn('Patient create fallback or already exists:', err);
-        }
+        newPatientData = {
+          fullName: fullName.trim(),
+          dateOfBirth: dateOfBirth,
+          gender: gender,
+          phone: phoneNumber.trim(),
+          contactEmail: email.trim() || undefined,
+        };
       }
 
       // 2. Prepare Create Appointment Payload
-      const idempotencyKey = `WALK_IN_${Date.now()}`;
+      const idempotencyKey = `WALK_${Date.now()}`;
       const appointmentPayload = {
-        patientId: finalPatientId || 301,
-        slotId: Number(selectedSlotId) || 605,
-        bookingSource: 'WALK_IN',
-        reason: reason.trim() || 'Khám trực tiếp tiếp đón tại quầy Lễ tân (Walk-in)',
+        patientId: newPatientData ? null : Number(finalPatientId),
+        patient: newPatientData || null,
+        slotId: Number(selectedSlotId),
+        bookingSource: effectiveSource,
+        reason: reason.trim() || 'Khám tiếp đón tại quầy Lễ tân (Walk-in)',
         idempotencyKey: idempotencyKey,
       };
 
       // 3. Call Receptionist Create Appointment API
-      let apptResult = null;
-      try {
-        apptResult = await receptionApi.createAppointment(appointmentPayload);
-      } catch (err) {
-        console.warn('createAppointment API error, creating simulated ticket:', err);
-        apptResult = {
-          id: Math.floor(1000 + Math.random() * 9000),
-          appointmentCode: `WALK-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
-          status: 'BOOKED',
-          patient: {
-            id: finalPatientId || 301,
-            patientCode: selectedPatientCode || `BN-${new Date().getFullYear()}-00${Math.floor(100 + Math.random() * 900)}`,
-            fullName: fullName,
-            phone: phoneNumber,
-            dateOfBirth: dateOfBirth,
-            gender: gender,
-            address: fullAddressString,
-          },
-          appointmentSlot: {
-            id: selectedSlotId,
-            startsAt: `${selectedDate}T08:00:00`,
-            endsAt: `${selectedDate}T08:30:00`,
-          },
-          reason: reason,
-        };
-      }
-
+      const apptResult = await receptionApi.createAppointment(appointmentPayload);
       const confirmedAppt = apptResult?.data || apptResult;
       const apptCode = confirmedAppt.appointmentCode || `WALK-${new Date().getFullYear()}-00892`;
-      const apptId = confirmedAppt.id || 892;
+      const apptId = confirmedAppt.id;
 
       setCreatedAppointment(confirmedAppt);
 
@@ -556,7 +526,7 @@ export default function ReceptionWalkInPage() {
         appointmentId: apptId,
         appointmentCode: apptCode,
         queueNumber: `A-${String(Math.floor(1 + Math.random() * 40)).padStart(2, '0')}`,
-        bookingSource: 'WALK_IN',
+        bookingSource: effectiveSource,
         paymentMethod: methodUsed === 'cash' ? 'TIỀN MẶT TẠI QUẦY' : 'PAYOS (VIETQR ONLINE)',
         paymentStatus: 'ĐÃ THANH TOÁN',
         feeAmount: feeAmount,
@@ -564,16 +534,16 @@ export default function ReceptionWalkInPage() {
         serviceName: selectedService?.serviceName || 'Khám Da liễu Ban đầu',
         doctorName: selectedDoctorName,
         dateDisplay: next7Days.find((d) => d.iso === selectedDate)?.displayDate || selectedDate,
-        timeSlot: selectedSlotTime,
+        timeSlot: selectedShift,
         clinicRoom: 'Phòng 102 - Tầng 1 (Khu Khám Da Liễu Tổng Quát)',
-        patientName: fullName,
-        patientCode: selectedPatientCode || confirmedAppt?.patient?.patientCode || 'BN-2026-00301',
-        phoneNumber: phoneNumber,
-        dateOfBirth: dateOfBirth,
+        patientName: confirmedAppt?.patient?.fullName || fullName,
+        patientCode: confirmedAppt?.patient?.patientCode || selectedPatientCode || 'BN-2026-00301',
+        phoneNumber: confirmedAppt?.patient?.phone || phoneNumber,
+        dateOfBirth: confirmedAppt?.patient?.dateOfBirth || dateOfBirth,
         gender: gender === 'MALE' ? 'Nam' : gender === 'FEMALE' ? 'Nữ' : 'Khác',
         address: fullAddressString,
         reason: reason,
-        qrCodeText: `APPT:${apptCode}|${fullName}|${selectedDate}`,
+        qrCodeText: `APPT:${apptCode}|${confirmedAppt?.patient?.fullName || fullName}|${selectedDate}`,
         createdAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
       };
 
@@ -582,7 +552,8 @@ export default function ReceptionWalkInPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Walk-in booking error:', err);
-      setPaymentError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tạo lịch hẹn walk-in. Vui lòng thử lại.');
+      const errMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tạo lịch hẹn walk-in. Vui lòng thử lại.';
+      setPaymentError(errMsg);
     } finally {
       setSubmittingPayment(false);
     }
@@ -1615,14 +1586,19 @@ export default function ReceptionWalkInPage() {
                     Mã VietQR PayOS Động
                   </span>
 
-                  <div className="p-3 bg-white rounded-2xl border-2 border-dashed border-sky-400/80 shadow-xs">
-                    
+                  <div className="p-3 bg-white rounded-2xl border-2 border-dashed border-sky-400/80 shadow-xs flex items-center justify-center">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${checkoutData?.appointmentCode}`
-                    )}`}
-                      alt="QR Lịch Hẹn"
-                      className="w-32 h-32 object-contain"
-                      />
+                      src={`https://api.vietqr.io/image/970422-0388686899-compact2.png?amount=${feeAmount}&addInfo=${encodeURIComponent(
+                        `WALKIN ${phoneNumber || 'KHAM'}`
+                      )}&accountName=${encodeURIComponent('BENH VIEN DA LIEU TP.HCM')}`}
+                      onError={(e) => {
+                        e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                          `PAYOS:MB:0388686899:${feeAmount}:WALKIN ${phoneNumber || 'KHAM'}`
+                        )}`;
+                      }}
+                      alt="Mã QR PayOS VietQR"
+                      className="w-44 h-44 object-contain"
+                    />
                   </div>
 
                   <span className="text-[11px] text-slate-500 text-center">

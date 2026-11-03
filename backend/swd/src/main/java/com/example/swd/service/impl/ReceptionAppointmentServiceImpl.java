@@ -61,8 +61,8 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
     private final EntityManager em;
 
     public ReceptionAppointmentServiceImpl(AppointmentRepository appointments, AppointmentSlotRepository slots,
-                                       PatientRepository patients, DoctorProfileRepository doctors,
-                                       HospitalStaffRepository staff, UserAccountRepository accounts, EntityManager em) {
+                                        PatientRepository patients, DoctorProfileRepository doctors,
+                                        HospitalStaffRepository staff, UserAccountRepository accounts, EntityManager em) {
         this.appointments = appointments;
         this.slots = slots;
         this.patients = patients;
@@ -109,11 +109,12 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         var day = date == null ? today() : date;
         var doctorViews = new LinkedHashMap<Long, com.example.swd.dto.response.WorkflowViews.DoctorView>();
         List<SlotView> available = new ArrayList<>();
+        boolean isToday = day.equals(today());
         for (AppointmentSlot slot : slots.findForDate(utcStart(day), utcStart(day.plusDays(1)))) {
             var profile = doctors.findById(slot.getWorkSchedule().getStaff().getId());
             if (profile.isEmpty()) continue;
             DoctorProfile doctor = profile.get();
-            if (!isUsable(slot, doctor) || !slot.getEndsAt().isAfter(now())) continue;
+            if (!isUsable(slot, doctor) || (!isToday && !slot.getEndsAt().isAfter(now()))) continue;
             int remaining = Math.max(0, slot.getCapacity() - (int) appointments.countActiveBySlotId(slot.getId()));
             available.add(WorkflowMapper.slot(slot, doctor, remaining));
             doctorViews.putIfAbsent(doctor.getId(), WorkflowMapper.doctor(doctor));
@@ -151,7 +152,12 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
             return view(existing.get());
         }
         AppointmentSlot slot = slots.lockById(input.slotId()).orElseThrow(() -> missing("Khung giờ"));
-        validateSlot(slot, input.bookingSource());
+        Appointment.BookingSource effectiveSource = input.bookingSource();
+        LocalDate slotDate = slot.getStartsAt().atOffset(ZoneOffset.UTC).atZoneSameInstant(VIETNAM).toLocalDate();
+        if (effectiveSource == Appointment.BookingSource.WALK_IN && !slotDate.equals(today())) {
+            effectiveSource = Appointment.BookingSource.ASSISTED;
+        }
+        validateSlot(slot, effectiveSource);
         ensureCapacity(slot);
         Patient patient;
         if (input.patientId() != null) {
@@ -165,7 +171,7 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         appointment.setAppointmentCode(code);
         appointment.setPatient(patient);
         appointment.setAppointmentSlot(slot);
-        appointment.setBookingSource(input.bookingSource());
+        appointment.setBookingSource(effectiveSource);
         appointment.setCreatedByAccount(creator);
         appointment.setReason(normalize(input.reason()));
         appointments.saveAndFlush(appointment);
@@ -275,16 +281,15 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
     private void validateSlot(AppointmentSlot slot, Appointment.BookingSource source) {
         if (!isUsable(slot, doctorFor(slot))) throw invalid("slotId", "Khung giờ hoặc bác sĩ hiện không nhận lịch.");
         LocalDateTime instant = now();
-        if (!slot.getEndsAt().isAfter(instant)) throw invalid("slotId", "Khung giờ đã kết thúc.");
         LocalDate slotDate = slot.getStartsAt().atOffset(ZoneOffset.UTC).atZoneSameInstant(VIETNAM).toLocalDate();
+        if (slotDate.isBefore(today())) {
+            throw invalid("slotId", "Không thể đặt lịch hẹn cho ngày trong quá khứ.");
+        }
         if (source == Appointment.BookingSource.WALK_IN) {
             if (!slotDate.equals(today())) throw invalid("slotId", "Walk-in chỉ nhận khung giờ hôm nay.");
         } else {
             var rule = slot.getAppointmentRule();
-            if (slot.getStartsAt().isBefore(instant.plusMinutes(rule.getMinBookingNoticeMinutes()))) {
-                throw invalid("slotId", "Khung giờ không đủ thời gian đặt trước theo quy định.");
-            }
-            if (slotDate.isAfter(today().plusDays(rule.getMaxBookingDaysAhead()))) {
+            if (rule != null && slotDate.isAfter(today().plusDays(rule.getMaxBookingDaysAhead()))) {
                 throw invalid("slotId", "Khung giờ vượt quá thời hạn đặt lịch.");
             }
         }

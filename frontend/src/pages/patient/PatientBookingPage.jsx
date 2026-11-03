@@ -120,7 +120,6 @@ export default function PatientBookingPage() {
   const [ward, setWard] = useState('Phường Võ Thị Sáu, Quận 3');
   const [streetAddress, setStreetAddress] = useState('');
   const [agreedTerms, setAgreedTerms] = useState(true);
-  const [recaptchaChecked, setRecaptchaChecked] = useState(false);
   const [formError, setFormError] = useState('');
 
   // ==============================================================
@@ -376,10 +375,6 @@ export default function PatientBookingPage() {
     }
     if (!agreedTerms) {
       setFormError('Quý khách vui lòng đồng ý với Chính sách bảo vệ dữ liệu cá nhân.');
-      return;
-    }
-    if (!recaptchaChecked) {
-      setFormError('Vui lòng xác nhận vào ô "Tôi không phải là người máy".');
       return;
     }
 
@@ -1089,29 +1084,6 @@ export default function PatientBookingPage() {
                 về bảo vệ dữ liệu cá nhân. <span className="text-rose-500">*</span>
               </span>
             </label>
-          </div>
-
-          {/* reCAPTCHA Mock Container */}
-          <div className="pt-2 flex justify-center sm:justify-start">
-            <div className="border border-slate-300 bg-slate-50/70 rounded-md p-3 flex items-center justify-between w-72 shadow-xs">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={recaptchaChecked}
-                  onChange={(e) => setRecaptchaChecked(e.target.checked)}
-                  className="w-6 h-6 rounded border-slate-300 text-[#1a4f8b] focus:ring-[#1a4f8b] cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-slate-700">Tôi không phải là người máy</span>
-              </label>
-              <div className="flex flex-col items-center pl-4 border-l border-slate-200">
-                <img
-                  src="https://www.gstatic.com/recaptcha/api2/logo_48.png"
-                  alt="reCAPTCHA"
-                  className="w-7 h-7"
-                />
-                <span className="text-[9px] text-slate-400 mt-0.5">reCAPTCHA</span>
-              </div>
-            </div>
           </div>
 
           {/* Action Buttons: Quay lại / Đăng ký khám */}

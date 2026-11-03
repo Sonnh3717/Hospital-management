@@ -269,7 +269,8 @@ public class AppointmentServiceImpl implements com.example.swd.service.Appointme
         ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
         LocalDate queryDate = date != null ? date : LocalDate.now(vietnamZone);
         LocalDateTime from = queryDate.atStartOfDay(vietnamZone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-        LocalDateTime to = queryDate.plusDays(1).atStartOfDay(vietnamZone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        LocalDateTime to = queryDate.plusDays(1).atStartOfDay(vietnamZone).withZoneSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
         List<AppointmentSlot> slots = appointmentSlotRepository.findForDate(from, to);
