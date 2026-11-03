@@ -11,8 +11,10 @@ import com.example.swd.dto.response.BookingCheckoutResponse;
 import com.example.swd.dto.response.WorkflowViews;
 import com.example.swd.entity.appointment.Appointment;
 import com.example.swd.entity.identity.UserAccount;
+import com.example.swd.entity.medicalservice.MedicalService;
 import com.example.swd.entity.patient.Patient;
 import com.example.swd.repository.AppointmentRepository;
+import com.example.swd.repository.MedicalServiceRepository;
 import com.example.swd.repository.PatientRepository;
 import com.example.swd.repository.UserAccountRepository;
 import com.example.swd.security.StaffPrincipal;
@@ -42,6 +44,16 @@ public class AppointmentController {
     private final AppointmentRepository appointmentRepository;
     private final UserAccountRepository userAccountRepository;
     private final PatientRepository patientRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
+
+    /**
+     * Danh sách dịch vụ y tế cho đặt lịch khám
+     */
+    @GetMapping("/public/medical-services")
+    public ResponseEntity<ApiResponse<List<MedicalService>>> getPublicMedicalServices() {
+        List<MedicalService> list = medicalServiceRepository.findByActiveTrueOrderByServiceNameAsc();
+        return ResponseEntity.ok(ApiResponse.ok("Danh sách dịch vụ y tế", list));
+    }
 
     /**
      * Đặt lịch khám và khởi tạo thanh toán payOS

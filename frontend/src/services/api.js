@@ -99,6 +99,10 @@ export const patientApi = {
 
 // ==================== APPOINTMENT API ====================
 export const appointmentApi = {
+  getMedicalServices: async () => {
+    const response = await api.get('/public/medical-services');
+    return response.data;
+  },
   getAvailableSlots: async (date, doctorId) => {
     const response = await api.get('/appointments/available-slots', {
       params: { date, doctorId },
@@ -128,6 +132,13 @@ export const appointmentApi = {
   },
   getTicket: async (id) => {
     const response = await api.get(`/public/appointments/${id}/ticket`);
+    return response.data;
+  },
+  confirmPayment: async (orderCode) => {
+    const response = await api.post('/public/payments/payos-webhook', {
+      code: '00',
+      data: { orderCode: String(orderCode) },
+    });
     return response.data;
   },
 };
