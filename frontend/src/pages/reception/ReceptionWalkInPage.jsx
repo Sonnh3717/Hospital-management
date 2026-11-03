@@ -25,6 +25,30 @@ import {
   MapPinIcon,
 } from '../../components/common/Icons';
 
+const HOSPITAL_SHIFTS = [
+  {
+    id: 'SHIFT-EARLY',
+    code: 'SHIFT-EARLY',
+    name: 'Ca Sáng Sớm',
+    time: '06:00 - 07:30',
+    display: 'Ca Sáng Sớm (06:00 - 07:30)',
+  },
+  {
+    id: 'SHIFT-MORNING',
+    code: 'SHIFT-MORNING',
+    name: 'Ca Sáng',
+    time: '07:30 - 12:00',
+    display: 'Ca Sáng (07:30 - 12:00)',
+  },
+  {
+    id: 'SHIFT-AFTERNOON',
+    code: 'SHIFT-AFTERNOON',
+    name: 'Ca Chiều',
+    time: '13:00 - 17:00',
+    display: 'Ca Chiều (13:00 - 17:00)',
+  },
+];
+
 export default function ReceptionWalkInPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -94,10 +118,14 @@ export default function ReceptionWalkInPage() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState(next7Days[0]?.iso || '');
-  const [selectedShift, setSelectedShift] = useState('Ca Sáng (07:30 - 12:30)');
+  const [selectedShiftCode, setSelectedShiftCode] = useState('SHIFT-MORNING');
+  const selectedShiftObj = useMemo(() => {
+    return HOSPITAL_SHIFTS.find((s) => s.id === selectedShiftCode) || HOSPITAL_SHIFTS[1];
+  }, [selectedShiftCode]);
+  const selectedShift = selectedShiftObj.display;
+
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlotId, setSelectedSlotId] = useState(605);
-  const [selectedSlotTime, setSelectedSlotTime] = useState('08:00 - 08:30');
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   // Danh sách bác sĩ làm việc trong ca đó (Không bắt buộc chọn)
@@ -206,32 +234,22 @@ export default function ReceptionWalkInPage() {
   }, [cashGiven, feeAmount]);
 
   // --------------------------------------------------------------
-  // 2. Fetch Available Slots for Selected Date & Doctor
+  // 2. Fetch Available Slots for Selected Date
   // --------------------------------------------------------------
   useEffect(() => {
     let isMounted = true;
     const fetchSlots = async () => {
       setLoadingSlots(true);
       try {
-        const res = await appointmentApi.getAvailableSlots(selectedDate, selectedDoctorId || undefined);
+        const res = await appointmentApi.getAvailableSlots(selectedDate);
         if (isMounted) {
           const slots = res?.data || res || [];
           setAvailableSlots(Array.isArray(slots) ? slots : []);
-          if (Array.isArray(slots) && slots.length > 0) {
-            setSelectedSlotId(slots[0].id);
-            const sStart = slots[0].startsAt ? new Date(slots[0].startsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '08:00';
-            const sEnd = slots[0].endsAt ? new Date(slots[0].endsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '08:30';
-            setSelectedSlotTime(`${sStart} - ${sEnd}`);
-          } else {
-            setSelectedSlotId(605);
-            setSelectedSlotTime('08:00 - 08:30');
-          }
         }
       } catch (err) {
         console.warn('Cannot fetch slots, using default fallback slot:', err);
         if (isMounted) {
-          setSelectedSlotId(605);
-          setSelectedSlotTime('08:00 - 08:30');
+          setAvailableSlots([]);
         }
       } finally {
         if (isMounted) setLoadingSlots(false);
@@ -242,28 +260,82 @@ export default function ReceptionWalkInPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedDate, selectedDoctorId]);
+  }, [selectedDate]);
 
-  // Doctors on duty
-  const shiftDoctors = useMemo(() => {
+  // Slots matching the chosen shift
+  const shiftSlots = useMemo(() => {
+    return availableSlots.filter((slot) => {
+      if (slot.shiftCode) {
+        if (slot.shiftCode.includes('EARLY')) return selectedShiftCode === 'SHIFT-EARLY';
+        if (slot.shiftCode.includes('AFTERNOON') || slot.shiftCode.includes('EVENING')) return selectedShiftCode === 'SHIFT-AFTERNOON';
+        return selectedShiftCode === 'SHIFT-MORNING';
+      }
+      if (!slot.startsAt) return selectedShiftCode === 'SHIFT-MORNING';
+      const d = new Date(slot.startsAt);
+      const hours = d.getHours() + d.getMinutes() / 60;
+      if (hours < 7.25) return selectedShiftCode === 'SHIFT-EARLY';
+      if (hours < 12.5) return selectedShiftCode === 'SHIFT-MORNING';
+      return selectedShiftCode === 'SHIFT-AFTERNOON';
+    });
+  }, [availableSlots, selectedShiftCode]);
+
+  // Doctors on duty in this shift
+  const doctorsInShift = useMemo(() => {
     const doctorMap = new Map();
-    doctorMap.set('201', { id: 201, fullName: 'BS. CKI VŨ MINH TUẤN', specialization: 'Bác sĩ CK I Da liễu' });
-    doctorMap.set('202', { id: 202, fullName: 'Ths. BS LÊ THỊ MAI', specialization: 'Thạc sĩ Da liễu & Thẩm mỹ' });
-    doctorMap.set('204', { id: 204, fullName: 'PGS. TS NGUYỄN VĂN AN', specialization: 'Phó Giáo sư Da liễu' });
 
-    if (Array.isArray(availableSlots)) {
-      availableSlots.forEach((slot) => {
-        if (slot?.doctor?.id) {
-          doctorMap.set(String(slot.doctor.id), {
-            id: slot.doctor.id,
-            fullName: slot.doctor.fullName || slot.doctor.name || `BS. ${slot.doctor.id}`,
-            specialization: slot.doctor.specialization || 'Bác sĩ Da liễu',
+    if (Array.isArray(shiftSlots) && shiftSlots.length > 0) {
+      shiftSlots.forEach((slot) => {
+        const dId = slot.doctorId || slot?.doctor?.id;
+        const dName = slot.doctorName || slot?.doctor?.fullName || slot?.doctor?.name;
+        const dSpec = slot.specialization || slot?.doctor?.specialization;
+        if (dId && dName) {
+          doctorMap.set(String(dId), {
+            id: dId,
+            fullName: dName,
+            specialization: dSpec || 'Bác sĩ Da liễu',
+            slotId: slot.id,
           });
         }
       });
     }
+
+    if (doctorMap.size === 0) {
+      if (selectedShiftCode === 'SHIFT-EARLY') {
+        doctorMap.set('204', { id: 204, fullName: 'BSCKII. Vũ Minh Tuấn', specialization: 'Da liễu tổng quát & Thẩm mỹ da', slotId: 620 });
+        doctorMap.set('206', { id: 206, fullName: 'BS. CKI Lê Thị Mai', specialization: 'Da liễu dị ứng & Miễn dịch da', slotId: 621 });
+      } else if (selectedShiftCode === 'SHIFT-MORNING') {
+        doctorMap.set('204', { id: 204, fullName: 'BSCKII. Vũ Minh Tuấn', specialization: 'Da liễu tổng quát & Thẩm mỹ da', slotId: 622 });
+        doctorMap.set('207', { id: 207, fullName: 'ThS. BS Trần Trung Kiên', specialization: 'Ngoại da liễu & Laser thẩm mỹ', slotId: 623 });
+      } else {
+        doctorMap.set('206', { id: 206, fullName: 'BS. CKI Lê Thị Mai', specialization: 'Da liễu dị ứng & Miễn dịch da', slotId: 624 });
+        doctorMap.set('207', { id: 207, fullName: 'ThS. BS Trần Trung Kiên', specialization: 'Ngoại da liễu & Laser thẩm mỹ', slotId: 625 });
+      }
+    }
     return Array.from(doctorMap.values());
-  }, [availableSlots]);
+  }, [shiftSlots, selectedShiftCode]);
+
+  // Synchronize slot ID & doctor name
+  useEffect(() => {
+    if (selectedDoctorId) {
+      const doc = doctorsInShift.find((d) => String(d.id) === String(selectedDoctorId));
+      if (doc) {
+        setSelectedDoctorName(doc.fullName);
+        setSelectedSlotId(doc.slotId);
+        return;
+      }
+    }
+    setSelectedDoctorName('Bác sĩ bất kỳ theo phân bổ ca trực');
+    if (shiftSlots.length > 0) {
+      setSelectedSlotId(shiftSlots[0].id);
+    } else if (doctorsInShift.length > 0) {
+      setSelectedSlotId(doctorsInShift[0].slotId);
+    }
+  }, [selectedDoctorId, shiftSlots, doctorsInShift, selectedShiftCode]);
+
+  const handleShiftSelect = (shiftId) => {
+    setSelectedShiftCode(shiftId);
+    setSelectedDoctorId('');
+  };
 
   // PayOS countdown timer
   useEffect(() => {
@@ -1123,131 +1195,114 @@ export default function ReceptionWalkInPage() {
             </div>
           </div>
 
-          {/* 3. Khi bấm chọn ngày -> Hiện các ca khám & slot giờ */}
-          <div className="space-y-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-200">
+          {/* 3. Khi bấm chọn ngày -> Hiện 3 Ca khám */}
+          <div className="space-y-3 bg-slate-50/70 p-5 rounded-2xl border border-slate-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
-                Ca khám & Khung giờ tiếp nhận
+                3. Chọn ca khám ngày {next7Days.find((d) => d.iso === selectedDate)?.displayDate || selectedDate} <span className="text-rose-500">*</span>
               </label>
-              <div className="flex items-center gap-2">
-                {['Ca Sáng (07:30 - 12:30)', 'Ca Chiều (13:00 - 16:30)'].map((shift) => (
-                  <button
-                    key={shift}
-                    type="button"
-                    onClick={() => setSelectedShift(shift)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                      selectedShift === shift
-                        ? 'bg-white text-sky-700 border border-sky-300 shadow-2xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    {shift}
-                  </button>
-                ))}
-              </div>
+              <span className="text-[11px] text-slate-500">Bệnh viện tiếp nhận theo 3 ca tiêu chuẩn</span>
             </div>
 
-            {loadingSlots ? (
-              <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                <RefreshCwIcon className="w-4 h-4 animate-spin text-sky-600" />
-                <span>Đang kiểm tra tình trạng chỗ trống theo ca...</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                {(availableSlots.length > 0 ? availableSlots : [
-                  { id: 605, time: '08:00 - 08:30', status: 'AVAILABLE' },
-                  { id: 606, time: '08:30 - 09:00', status: 'AVAILABLE' },
-                  { id: 607, time: '09:00 - 09:30', status: 'AVAILABLE' },
-                  { id: 608, time: '09:30 - 10:00', status: 'AVAILABLE' },
-                  { id: 609, time: '10:00 - 10:30', status: 'AVAILABLE' },
-                  { id: 610, time: '10:30 - 11:00', status: 'AVAILABLE' },
-                  { id: 611, time: '13:30 - 14:00', status: 'AVAILABLE' },
-                  { id: 612, time: '14:00 - 14:30', status: 'AVAILABLE' },
-                  { id: 613, time: '14:30 - 15:00', status: 'AVAILABLE' },
-                  { id: 614, time: '15:00 - 15:30', status: 'AVAILABLE' },
-                ]).map((slot) => {
-                  const sTime = slot.time || (slot.startsAt ? `${new Date(slot.startsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(slot.endsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : '08:00 - 08:30');
-                  const isSelected = selectedSlotId === slot.id;
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSlotId(slot.id);
-                        setSelectedSlotTime(sTime);
-                      }}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50'
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {HOSPITAL_SHIFTS.map((shift) => {
+                const isSelected = selectedShiftCode === shift.id;
+                return (
+                  <button
+                    key={shift.id}
+                    type="button"
+                    onClick={() => handleShiftSelect(shift.id)}
+                    className={`p-3.5 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                      isSelected
+                        ? 'bg-sky-600 text-white border-sky-600 shadow-sm shadow-sky-600/30 ring-2 ring-sky-300'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/30'
+                    }`}
+                  >
+                    <span className="text-sm font-black">{shift.name}</span>
+                    <span
+                      className={`text-xs font-semibold ${
+                        isSelected ? 'text-sky-100' : 'text-slate-500'
                       }`}
                     >
-                      <ClockIcon className="w-3.5 h-3.5 shrink-0 opacity-70" />
-                      <span>{sTime}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      {shift.time}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* 4. Danh sách bác sĩ làm việc trong ca đó (Không bắt buộc chọn) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          {/* 4. Sau đó mới xuất hiện danh sách bác sĩ làm việc trong ca đó */}
+          <div className="space-y-3 bg-white p-5 rounded-2xl border border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
-                Danh sách bác sĩ trực ca tiếp nhận <span className="text-slate-400 font-normal lowercase">(không bắt buộc)</span>
+                4. Danh sách bác sĩ trực ca {selectedShiftObj.name} ({selectedShiftObj.time}) <span className="text-slate-400 font-normal lowercase">(không bắt buộc)</span>
               </label>
               <span className="text-[11px] text-slate-500">Mặc định: Phân bổ tự động theo bàn khám</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Option: Any doctor */}
-              <div
-                onClick={() => {
-                  setSelectedDoctorId('');
-                  setSelectedDoctorName('Bác sĩ bất kỳ theo phân bổ ca trực');
-                }}
-                className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
-                  selectedDoctorId === ''
-                    ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-2xs'
-                    : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
-                }`}
-              >
-                <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 font-bold text-xs">
-                  AUTO
-                </div>
-                <div>
-                  <div className="font-bold text-xs">Bác sĩ bất kỳ</div>
-                  <div className="text-[10px] text-slate-500">Phân bổ ca trực</div>
-                </div>
+            {loadingSlots ? (
+              <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                <RefreshCwIcon className="w-4 h-4 animate-spin text-sky-600" />
+                <span>Đang tải danh sách bác sĩ trực ca...</span>
               </div>
-
-              {/* Doctors list */}
-              {shiftDoctors.map((doc) => {
-                const isSelected = String(selectedDoctorId) === String(doc.id);
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => {
-                      setSelectedDoctorId(String(doc.id));
-                      setSelectedDoctorName(doc.fullName);
-                    }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
-                      isSelected
-                        ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-2xs'
-                        : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-700 shrink-0 font-bold text-xs">
-                      BS
-                    </div>
-                    <div className="overflow-hidden">
-                      <div className="font-bold text-xs truncate">{doc.fullName}</div>
-                      <div className="text-[10px] text-slate-500 truncate">{doc.specialization}</div>
-                    </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Option: Any doctor */}
+                <div
+                  onClick={() => {
+                    setSelectedDoctorId('');
+                    setSelectedDoctorName('Bác sĩ bất kỳ theo phân bổ ca trực');
+                  }}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
+                    selectedDoctorId === ''
+                      ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-2xs ring-2 ring-sky-200'
+                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-700 shrink-0 font-bold text-xs">
+                    AUTO
                   </div>
-                );
-              })}
+                  <div>
+                    <div className="font-bold text-xs">Bác sĩ bất kỳ</div>
+                    <div className="text-[10px] text-slate-500">Phân bổ ca trực</div>
+                  </div>
+                </div>
+
+                {/* Doctors list */}
+                {doctorsInShift.map((doc) => {
+                  const isSelected = String(selectedDoctorId) === String(doc.id);
+                  return (
+                    <div
+                      key={doc.id}
+                      onClick={() => {
+                        setSelectedDoctorId(String(doc.id));
+                        setSelectedDoctorName(doc.fullName);
+                      }}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
+                        isSelected
+                          ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-2xs ring-2 ring-sky-200'
+                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0 font-bold text-xs">
+                        BS
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="font-bold text-xs truncate">{doc.fullName}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{doc.specialization}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span>
+                Bác sĩ trực tiếp nhận: <strong className="text-slate-900">{selectedDoctorName}</strong>
+              </span>
             </div>
           </div>
 
@@ -1385,8 +1440,8 @@ export default function ReceptionWalkInPage() {
               <div className="text-slate-500 mt-0.5">{selectedDoctorName}</div>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Thời gian khám:</span>
-              <strong className="text-slate-900 text-sm">{selectedSlotTime}</strong>
+              <span className="text-slate-400 block font-medium">Ca khám tiếp nhận:</span>
+              <strong className="text-slate-900 text-sm">{selectedShift}</strong>
               <div className="text-slate-500 mt-0.5">
                 {next7Days.find((d) => d.iso === selectedDate)?.displayDate || selectedDate}
               </div>
@@ -1561,16 +1616,13 @@ export default function ReceptionWalkInPage() {
                   </span>
 
                   <div className="p-3 bg-white rounded-2xl border-2 border-dashed border-sky-400/80 shadow-xs">
+                    
                     <img
-                      src={`https://api.vietqr.io/image/970422-0388686899-compact2.png?amount=${feeAmount}&addInfo=WALKIN%20${phoneNumber || 'HOSPITAL'}&accountName=BENH%20VIEN%20DA%20LIEU`}
-                      alt="VietQR PayOS"
-                      className="w-56 h-auto object-contain mx-auto"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                          `PAYOS:WALKIN|${fullName}|${feeAmount}`
-                        )}`;
-                      }}
-                    />
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${checkoutData?.appointmentCode}`
+                    )}`}
+                      alt="QR Lịch Hẹn"
+                      className="w-32 h-32 object-contain"
+                      />
                   </div>
 
                   <span className="text-[11px] text-slate-500 text-center">
@@ -1787,8 +1839,8 @@ export default function ReceptionWalkInPage() {
               </div>
 
               <div>
-                <span className="text-slate-400 block">Khung giờ hẹn khám:</span>
-                <strong className="text-emerald-700 font-bold">{ticketData.timeSlot}</strong>
+                <span className="text-slate-400 block">Ca khám tiếp nhận:</span>
+                <strong className="text-emerald-700 font-bold">{selectedShift || ticketData.timeSlot}</strong>
               </div>
 
               <div className="col-span-2">

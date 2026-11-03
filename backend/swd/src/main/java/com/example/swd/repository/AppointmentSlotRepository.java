@@ -8,11 +8,12 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AppointmentSlotRepository extends JpaRepository<AppointmentSlot, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from AppointmentSlot s where s.id = :id")
-    Optional<AppointmentSlot> lockById(Long id);
+    Optional<AppointmentSlot> lockById(@Param("id") Long id);
     @Query("select s from AppointmentSlot s where s.startsAt >= :from and s.startsAt < :to order by s.startsAt")
-    List<AppointmentSlot> findForDate(LocalDateTime from, LocalDateTime to);
+    List<AppointmentSlot> findForDate(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

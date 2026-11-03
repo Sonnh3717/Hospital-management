@@ -9,7 +9,13 @@ public final class WorkflowViews {
                               String gender, String phone, String contactEmail) {}
     public record DoctorView(Long id, String fullName, String specialization) {}
     public record SlotView(Long id, Long doctorId, String doctorName, String specialization,
-                           String startsAt, String endsAt, Integer capacity, int remaining) {}
+                           String startsAt, String endsAt, Integer capacity, int remaining,
+                           String shiftCode, String shiftName) {
+        public SlotView(Long id, Long doctorId, String doctorName, String specialization,
+                        String startsAt, String endsAt, Integer capacity, int remaining) {
+            this(id, doctorId, doctorName, specialization, startsAt, endsAt, capacity, remaining, null, null);
+        }
+    }
     public record AppointmentView(Long id, String appointmentCode, PatientView patient, DoctorView doctor,
                                   SlotView slot, String bookingSource, String status, String reason,
                                   String note, String checkedInAt, Long encounterId, String encounterStatus) {}

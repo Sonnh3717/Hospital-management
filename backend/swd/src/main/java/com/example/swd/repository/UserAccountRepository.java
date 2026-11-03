@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
     @EntityGraph(attributePaths = "role")
@@ -19,8 +20,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     }
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserAccount u where u.id = :id")
-    Optional<UserAccount> lockById(Long id);
+    Optional<UserAccount> lockById(@Param("id") Long id);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserAccount u where u.loginEmail = :email")
-    Optional<UserAccount> lockByLoginEmail(String email);
+    Optional<UserAccount> lockByLoginEmail(@Param("email") String email);
 }

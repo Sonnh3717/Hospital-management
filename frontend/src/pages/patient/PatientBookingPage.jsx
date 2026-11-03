@@ -16,6 +16,30 @@ import {
   UserIcon,
 } from '../../components/common/Icons';
 
+export const HOSPITAL_SHIFTS = [
+  {
+    id: 'SHIFT-EARLY',
+    code: 'SHIFT-EARLY',
+    name: 'Ca Sáng Sớm',
+    time: '06:00 - 07:30',
+    display: 'Ca Sáng Sớm (06:00 - 07:30)',
+  },
+  {
+    id: 'SHIFT-MORNING',
+    code: 'SHIFT-MORNING',
+    name: 'Ca Sáng',
+    time: '07:30 - 12:00',
+    display: 'Ca Sáng (07:30 - 12:00)',
+  },
+  {
+    id: 'SHIFT-AFTERNOON',
+    code: 'SHIFT-AFTERNOON',
+    name: 'Ca Chiều',
+    time: '13:00 - 17:00',
+    display: 'Ca Chiều (13:00 - 17:00)',
+  },
+];
+
 export default function PatientBookingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -57,10 +81,14 @@ export default function PatientBookingPage() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState(next7Days[0]?.iso || '');
-  const [selectedShift, setSelectedShift] = useState('Ca Sáng (07:30 - 12:30)');
+  const [selectedShiftCode, setSelectedShiftCode] = useState('SHIFT-MORNING');
+  const selectedShiftObj = useMemo(() => {
+    return HOSPITAL_SHIFTS.find((s) => s.id === selectedShiftCode) || HOSPITAL_SHIFTS[1];
+  }, [selectedShiftCode]);
+  const selectedShift = selectedShiftObj.display;
+
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
-  const [selectedSlotTime, setSelectedSlotTime] = useState('08:00 - 08:30');
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   // Danh sách bác sĩ làm việc trong ca đó (Không bắt buộc chọn)
@@ -170,31 +198,21 @@ export default function PatientBookingPage() {
     return new Intl.NumberFormat('vi-VN').format(feeAmount) + ' VND';
   }, [feeAmount]);
 
-  // Fetch available slots when selectedDate or doctor changes
+  // Fetch available slots when selectedDate changes
   useEffect(() => {
     let isMounted = true;
     const fetchSlots = async () => {
       setLoadingSlots(true);
       try {
-        const res = await appointmentApi.getAvailableSlots(selectedDate, selectedDoctorId || undefined);
+        const res = await appointmentApi.getAvailableSlots(selectedDate);
         if (isMounted) {
           const slots = res?.data || res || [];
           setAvailableSlots(Array.isArray(slots) ? slots : []);
-          if (Array.isArray(slots) && slots.length > 0) {
-            setSelectedSlotId(slots[0].id);
-            const sStart = slots[0].startsAt ? new Date(slots[0].startsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '08:00';
-            const sEnd = slots[0].endsAt ? new Date(slots[0].endsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '08:30';
-            setSelectedSlotTime(`${sStart} - ${sEnd}`);
-          } else {
-            setSelectedSlotId(605);
-            setSelectedSlotTime('08:00 - 08:30');
-          }
         }
       } catch (err) {
-        console.warn('Cannot fetch slots, using default fallback slot:', err);
+        console.warn('Cannot fetch slots, using fallback:', err);
         if (isMounted) {
-          setSelectedSlotId(605);
-          setSelectedSlotTime('08:00 - 08:30');
+          setAvailableSlots([]);
         }
       } finally {
         if (isMounted) setLoadingSlots(false);
@@ -205,31 +223,82 @@ export default function PatientBookingPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedDate, selectedDoctorId]);
+  }, [selectedDate]);
 
-  // Extract doctors on duty in this shift / date
-  const shiftDoctors = useMemo(() => {
+  // Slots matching the chosen shift
+  const shiftSlots = useMemo(() => {
+    return availableSlots.filter((slot) => {
+      if (slot.shiftCode) {
+        if (slot.shiftCode.includes('EARLY')) return selectedShiftCode === 'SHIFT-EARLY';
+        if (slot.shiftCode.includes('AFTERNOON') || slot.shiftCode.includes('EVENING')) return selectedShiftCode === 'SHIFT-AFTERNOON';
+        return selectedShiftCode === 'SHIFT-MORNING';
+      }
+      if (!slot.startsAt) return selectedShiftCode === 'SHIFT-MORNING';
+      const d = new Date(slot.startsAt);
+      const hours = d.getHours() + d.getMinutes() / 60;
+      if (hours < 7.25) return selectedShiftCode === 'SHIFT-EARLY';
+      if (hours < 12.5) return selectedShiftCode === 'SHIFT-MORNING';
+      return selectedShiftCode === 'SHIFT-AFTERNOON';
+    });
+  }, [availableSlots, selectedShiftCode]);
+
+  // Extract doctors on duty in THIS specific shift / date
+  const doctorsInShift = useMemo(() => {
     const doctorMap = new Map();
-    // Default hospital doctors
-    doctorMap.set('201', { id: 201, fullName: 'BS. CKI VŨ MINH TUẤN', specialization: 'Bác sĩ CK I Da liễu' });
-    doctorMap.set('202', { id: 202, fullName: 'Ths. BS LÊ THỊ MAI', specialization: 'Thạc sĩ Da liễu & Thẩm mỹ' });
-    doctorMap.set('204', { id: 204, fullName: 'PGS. TS NGUYỄN VĂN AN', specialization: 'Phó Giáo sư Da liễu' });
 
-    // Plus any doctors returned from live slots
-    if (Array.isArray(availableSlots)) {
-      availableSlots.forEach((slot) => {
+    if (Array.isArray(shiftSlots) && shiftSlots.length > 0) {
+      shiftSlots.forEach((slot) => {
         if (slot.doctorId && slot.doctorName) {
           doctorMap.set(String(slot.doctorId), {
             id: slot.doctorId,
             fullName: slot.doctorName,
             specialization: slot.specialization || 'Bác sĩ chuyên khoa',
+            slotId: slot.id,
           });
         }
       });
     }
 
+    // Fallbacks if backend has not returned matching slots
+    if (doctorMap.size === 0) {
+      if (selectedShiftCode === 'SHIFT-EARLY') {
+        doctorMap.set('204', { id: 204, fullName: 'BSCKII. Vũ Minh Tuấn', specialization: 'Da liễu tổng quát & Thẩm mỹ da', slotId: 620 });
+        doctorMap.set('206', { id: 206, fullName: 'BS. CKI Lê Thị Mai', specialization: 'Da liễu dị ứng & Miễn dịch da', slotId: 621 });
+      } else if (selectedShiftCode === 'SHIFT-MORNING') {
+        doctorMap.set('204', { id: 204, fullName: 'BSCKII. Vũ Minh Tuấn', specialization: 'Da liễu tổng quát & Thẩm mỹ da', slotId: 622 });
+        doctorMap.set('207', { id: 207, fullName: 'ThS. BS Trần Trung Kiên', specialization: 'Ngoại da liễu & Laser thẩm mỹ', slotId: 623 });
+      } else {
+        doctorMap.set('206', { id: 206, fullName: 'BS. CKI Lê Thị Mai', specialization: 'Da liễu dị ứng & Miễn dịch da', slotId: 624 });
+        doctorMap.set('207', { id: 207, fullName: 'ThS. BS Trần Trung Kiên', specialization: 'Ngoại da liễu & Laser thẩm mỹ', slotId: 625 });
+      }
+    }
+
     return Array.from(doctorMap.values());
-  }, [availableSlots]);
+  }, [shiftSlots, selectedShiftCode]);
+
+  // Synchronize slot ID & doctor name whenever shift, doctor or slots change
+  useEffect(() => {
+    if (selectedDoctorId) {
+      const doc = doctorsInShift.find((d) => String(d.id) === String(selectedDoctorId));
+      if (doc) {
+        setSelectedDoctorName(doc.fullName);
+        setSelectedSlotId(doc.slotId);
+        return;
+      }
+    }
+    setSelectedDoctorName('Bác sĩ bất kỳ theo phân bổ ca trực');
+    if (shiftSlots.length > 0) {
+      setSelectedSlotId(shiftSlots[0].id);
+    } else if (doctorsInShift.length > 0) {
+      setSelectedSlotId(doctorsInShift[0].slotId);
+    }
+  }, [selectedDoctorId, shiftSlots, doctorsInShift, selectedShiftCode]);
+
+  // Select shift handler: switch shift and reset doctor to default
+  const handleShiftSelect = (shiftId) => {
+    setSelectedShiftCode(shiftId);
+    setSelectedDoctorId('');
+  };
 
   // Handle image upload
   const handleImageChange = (e) => {
@@ -485,9 +554,9 @@ export default function PatientBookingPage() {
               </div>
               <div>
                 <span className="font-semibold text-slate-900">Ngày: </span>
-                <span>{selectedDateObject?.displayDate}</span> ,{' '}
-                <span className="font-semibold text-slate-900">lúc: </span>
-                <span>{selectedSlotTime} ({selectedShift.split(' ')[0]})</span>
+                <span>{selectedDateObject?.displayDate} ({selectedDateObject?.dayOfWeek})</span> ,{' '}
+                <span className="font-semibold text-slate-900">Ca khám: </span>
+                <span className="font-bold text-[#1a4f8b]">{selectedShift}</span>
               </div>
               <div>
                 <span className="font-semibold text-slate-900">Người khám: </span>
@@ -527,12 +596,12 @@ export default function PatientBookingPage() {
 
           {/* Form 2-Column Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left Column: Droplist Dịch vụ y tế (DB), Bác sĩ theo ca, Lý do, Ảnh */}
+            {/* Left Column: Dịch vụ y tế (DB), Lý do khám, Hình ảnh triệu chứng */}
             <div className="space-y-4">
               {/* Droplist chọn dịch vụ y tế (Lấy trong database) */}
               <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Dịch vụ y tế <span className="text-rose-500">* (Dữ liệu từ bệnh viện)</span>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5 uppercase tracking-wide">
+                  1. Dịch vụ y tế chuyên khoa <span className="text-rose-500">*</span>
                 </label>
                 {loadingServices ? (
                   <div className="text-xs text-slate-400 py-2">Đang tải danh mục dịch vụ từ database...</div>
@@ -540,54 +609,29 @@ export default function PatientBookingPage() {
                   <select
                     value={selectedServiceId}
                     onChange={handleServiceChange}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#1a4f8b] focus:border-[#1a4f8b] bg-white outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#1a4f8b] focus:border-[#1a4f8b] bg-white outline-none shadow-2xs"
                   >
                     {medicalServices.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.serviceName} - {new Intl.NumberFormat('vi-VN').format(s.basePrice)} đ
+                        {s.serviceName} &mdash; {new Intl.NumberFormat('vi-VN').format(s.basePrice)} đ
                       </option>
                     ))}
                   </select>
                 )}
-                {selectedService?.description && (
-                  <p className="text-[11px] text-slate-500 mt-1 italic">
-                    {selectedService.description}
-                  </p>
+                {selectedService && (
+                  <div className="mt-2 p-2.5 bg-sky-50/70 border border-sky-100 rounded-lg flex items-center justify-between text-xs text-sky-900">
+                    <span className="italic">{selectedService.description || 'Khám lâm sàng da liễu tổng quát và chuyên sâu'}</span>
+                    <span className="font-bold text-[#1a4f8b] shrink-0 ml-2">
+                      Đơn giá: {formattedFee}
+                    </span>
+                  </div>
                 )}
-              </div>
-
-              {/* Danh sách bác sĩ làm việc trong ca đó (Không bắt buộc chọn) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Danh sách bác sĩ làm việc trong ca <span className="text-slate-400 font-normal">(Không bắt buộc chọn)</span>
-                </label>
-                <select
-                  value={selectedDoctorId}
-                  onChange={(e) => {
-                    const docId = e.target.value;
-                    setSelectedDoctorId(docId);
-                    if (!docId) {
-                      setSelectedDoctorName('Bác sĩ bất kỳ theo phân bổ ca trực');
-                    } else {
-                      const doc = shiftDoctors.find((d) => String(d.id) === String(docId));
-                      setSelectedDoctorName(doc ? doc.fullName : 'Bác sĩ theo ca');
-                    }
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#1a4f8b] focus:border-[#1a4f8b] bg-white outline-none"
-                >
-                  <option value="">-- Bác sĩ bất kỳ theo phân bổ ca trực --</option>
-                  {shiftDoctors.map((doc) => (
-                    <option key={doc.id} value={doc.id}>
-                      {doc.fullName} ({doc.specialization})
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Lý do khám */}
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-bold text-slate-900">
+                  <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">
                     Lý do khám <span className="text-rose-500">*</span>
                   </label>
                   <span className="text-[11px] text-slate-400">{reason.length}/100 ký tự</span>
@@ -604,8 +648,8 @@ export default function PatientBookingPage() {
 
               {/* Hình ảnh triệu chứng (nếu có) */}
               <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Hình ảnh triệu chứng <span className="text-slate-400 font-normal">(nếu có)</span>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5 uppercase tracking-wide">
+                  Hình ảnh triệu chứng <span className="text-slate-400 font-normal lowercase">(nếu có)</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold transition shadow-xs">
@@ -637,64 +681,62 @@ export default function PatientBookingPage() {
               </div>
             </div>
 
-            {/* Right Column: Chọn ngày (7 ngày gần nhất) & Hiện các ca khám */}
+            {/* Right Column: Chọn ngày (7 ngày gần nhất), Chọn Ca khám, Sau đó mới xuất hiện Bác sĩ trực ca */}
             <div className="space-y-4">
-              <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                Chọn ngày khám <span className="text-rose-500">* (7 ngày gần nhất)</span>
-              </label>
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5 uppercase tracking-wide">
+                  2. Chọn ngày khám <span className="text-rose-500">* (7 ngày gần nhất)</span>
+                </label>
 
-              {/* 7 ngày gần nhất */}
-              <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
-                {next7Days.map((item) => {
-                  const isSelected = selectedDate === item.iso;
-                  return (
-                    <button
-                      key={item.iso}
-                      type="button"
-                      onClick={() => setSelectedDate(item.iso)}
-                      className={`p-2 rounded-lg text-center transition flex flex-col items-center justify-center ${
-                        isSelected
-                          ? 'bg-[#1a4f8b] text-white shadow-sm ring-2 ring-[#1a4f8b]/30'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      <span className="text-xs font-extrabold">{item.labelDate}</span>
-                      <span
-                        className={`text-[9px] mt-0.5 whitespace-nowrap ${
-                          isSelected ? 'text-sky-100' : 'text-slate-500'
+                {/* 7 ngày gần nhất */}
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                  {next7Days.map((item) => {
+                    const isSelected = selectedDate === item.iso;
+                    return (
+                      <button
+                        key={item.iso}
+                        type="button"
+                        onClick={() => setSelectedDate(item.iso)}
+                        className={`p-2 rounded-lg text-center transition flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-[#1a4f8b] text-white shadow-sm ring-2 ring-[#1a4f8b]/30'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
-                        {item.labelDay}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className="text-xs font-extrabold">{item.labelDate}</span>
+                        <span
+                          className={`text-[9px] mt-0.5 whitespace-nowrap ${
+                            isSelected ? 'text-sky-100' : 'text-slate-500'
+                          }`}
+                        >
+                          {item.labelDay}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Khi bấm chọn ngày : Hiện các ca khám */}
-              <div className="pt-2 space-y-2">
-                <label className="block text-xs font-bold text-slate-900">
-                  Ca khám trong ngày {selectedDateObject?.displayDate} <span className="text-rose-500">*</span>
+              {/* Khi bấm chọn ngày : Chọn Ca khám (3 ca duy nhất) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
+                  3. Chọn ca khám ngày {selectedDateObject?.displayDate} <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'Sáng Sớm (06:00 - 07:30)', label: 'Sáng Sớm', time: '(06:00 - 07:30)' },
-                    { id: 'Ca Sáng (07:30 - 12:30)', label: 'Ca Sáng', time: '(07:30 - 12:30)' },
-                    { id: 'Ca Chiều (13:30 - 16:30)', label: 'Ca Chiều', time: '(13:30 - 16:30)' },
-                  ].map((shift) => {
-                    const isSelected = selectedShift === shift.id;
+                  {HOSPITAL_SHIFTS.map((shift) => {
+                    const isSelected = selectedShiftCode === shift.id;
                     return (
                       <button
                         key={shift.id}
                         type="button"
-                        onClick={() => setSelectedShift(shift.id)}
+                        onClick={() => handleShiftSelect(shift.id)}
                         className={`p-2.5 rounded-lg text-center transition flex flex-col items-center justify-center ${
                           isSelected
-                            ? 'bg-[#0284c7] text-white shadow-sm'
+                            ? 'bg-[#0284c7] text-white shadow-sm ring-2 ring-sky-300'
                             : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
-                        <span className="text-xs font-bold">{shift.label}</span>
+                        <span className="text-xs font-bold">{shift.name}</span>
                         <span
                           className={`text-[10px] mt-0.5 ${
                             isSelected ? 'text-sky-100' : 'text-slate-500'
@@ -708,70 +750,40 @@ export default function PatientBookingPage() {
                 </div>
               </div>
 
-              {/* Khung giờ slot chi tiết trong ca */}
-              <div className="pt-2 space-y-2">
-                <span className="text-[11px] font-semibold text-slate-600 block">
-                  Khung giờ tiếp nhận chi tiết trong {selectedShift.split(' ')[0]}:
-                </span>
+              {/* 4. Sau đó mới xuất hiện danh sách bác sĩ làm việc trong ca đó */}
+              <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    4. Bác sĩ làm việc trong ca {selectedShiftObj.name}
+                  </label>
+                  <span className="text-[11px] text-slate-500 italic">
+                    (Không bắt buộc chọn)
+                  </span>
+                </div>
+
                 {loadingSlots ? (
-                  <div className="text-xs text-slate-400 py-2 text-center">Đang nạp khung giờ từ hệ thống...</div>
-                ) : availableSlots.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableSlots.map((slot) => {
-                      const isSelected = selectedSlotId === slot.id;
-                      const sStart = slot.startsAt
-                        ? new Date(slot.startsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                        : '08:00';
-                      const sEnd = slot.endsAt
-                        ? new Date(slot.endsAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                        : '08:30';
-                      const timeStr = `${sStart} - ${sEnd}`;
-                      return (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedSlotId(slot.id);
-                            setSelectedSlotTime(timeStr);
-                          }}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium border text-center transition ${
-                            isSelected
-                              ? 'bg-[#1a4f8b] text-white border-[#1a4f8b]'
-                              : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
-                          }`}
-                        >
-                          {timeStr}
-                          {slot.remaining ? ` (${slot.remaining} chỗ)` : ''}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <div className="text-xs text-slate-400 py-1.5">Đang tải danh sách bác sĩ trực ca...</div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 605, label: '08:00 - 08:30 (Khả dụng)' },
-                      { id: 606, label: '08:30 - 09:00 (Khả dụng)' },
-                      { id: 607, label: '09:00 - 09:30 (Khả dụng)' },
-                      { id: 608, label: '09:30 - 10:00 (Khả dụng)' },
-                    ].map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedSlotId(s.id);
-                          setSelectedSlotTime(s.label.split(' ')[0] + ' - ' + s.label.split(' ')[2]);
-                        }}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border text-center transition ${
-                          selectedSlotId === s.id
-                            ? 'bg-[#1a4f8b] text-white border-[#1a4f8b]'
-                            : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
-                        }`}
-                      >
-                        {s.label}
-                      </button>
+                  <select
+                    value={selectedDoctorId}
+                    onChange={(e) => setSelectedDoctorId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#1a4f8b] focus:border-[#1a4f8b] bg-white outline-none shadow-2xs"
+                  >
+                    <option value="">-- Bác sĩ bất kỳ theo phân bổ ca trực --</option>
+                    {doctorsInShift.map((doc) => (
+                      <option key={doc.id} value={doc.id}>
+                        {doc.fullName} ({doc.specialization})
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 )}
+
+                <div className="text-[11px] text-slate-600 flex items-center gap-1.5 pt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>
+                    Bác sĩ tiếp nhận: <strong className="text-slate-800">{selectedDoctorName}</strong>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1292,8 +1304,7 @@ export default function PatientBookingPage() {
             <div className="bg-sky-50/60 border border-sky-200 rounded-xl p-5 flex flex-col sm:flex-row items-center gap-6">
               <div className="p-2 bg-white rounded-xl border border-slate-200 shrink-0 shadow-xs">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-                    ticketData?.qrCodeData || `APPT:${checkoutData?.appointmentCode}|${fullName}`
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${checkoutData?.appointmentCode}`
                   )}`}
                   alt="QR Lịch Hẹn"
                   className="w-32 h-32 object-contain"
@@ -1340,8 +1351,8 @@ export default function PatientBookingPage() {
                 <span className="font-bold text-[#1a4f8b]">{selectedDateObject?.displayDate}</span>
               </div>
               <div>
-                <span className="text-slate-400 block">Khung giờ:</span>
-                <span className="font-bold text-[#1a4f8b]">{selectedSlotTime}</span>
+                <span className="text-slate-400 block">Ca khám:</span>
+                <span className="font-bold text-[#1a4f8b]">{selectedShift}</span>
               </div>
               <div>
                 <span className="text-slate-400 block">Phòng khám dự kiến:</span>

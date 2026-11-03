@@ -23,12 +23,20 @@ public final class WorkflowMapper {
     }
     public static SlotView slot(AppointmentSlot value, int remaining) {
         var staff = value.getWorkSchedule().getStaff();
+        var shift = value.getWorkSchedule().getShiftTemplate();
+        String shiftCode = shift != null ? shift.getShiftCode() : null;
+        String shiftName = shift != null ? shift.getShiftName() : null;
         // The schedule staff id is the doctor's shared primary key.
         return new SlotView(value.getId(), staff.getId(), staff.getFullName(), null,
-                timestamp(value.getStartsAt()), timestamp(value.getEndsAt()), value.getCapacity(), Math.max(0, remaining));
+                timestamp(value.getStartsAt()), timestamp(value.getEndsAt()), value.getCapacity(), Math.max(0, remaining),
+                shiftCode, shiftName);
     }
     public static SlotView slot(AppointmentSlot value, DoctorProfile doctor, int remaining) {
+        var shift = value.getWorkSchedule().getShiftTemplate();
+        String shiftCode = shift != null ? shift.getShiftCode() : null;
+        String shiftName = shift != null ? shift.getShiftName() : null;
         return new SlotView(value.getId(), doctor.getId(), doctor.getStaff().getFullName(), doctor.getSpecialization(),
-                timestamp(value.getStartsAt()), timestamp(value.getEndsAt()), value.getCapacity(), Math.max(0, remaining));
+                timestamp(value.getStartsAt()), timestamp(value.getEndsAt()), value.getCapacity(), Math.max(0, remaining),
+                shiftCode, shiftName);
     }
 }
