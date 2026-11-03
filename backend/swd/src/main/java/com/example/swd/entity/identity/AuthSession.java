@@ -33,7 +33,7 @@ public class AuthSession extends CreatedEntity {
     private String id = UUID.randomUUID().toString();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_account_id", nullable = false)
+    @JoinColumn(name = "user_account_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private UserAccount userAccount;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "DATETIME(6)")

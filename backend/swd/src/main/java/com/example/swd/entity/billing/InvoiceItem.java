@@ -34,11 +34,11 @@ public class InvoiceItem extends CreatedEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "invoice_id", nullable = false)
+    @JoinColumn(name = "invoice_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private Invoice invoice;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medical_service_request_id", nullable = false, unique = true)
+    @JoinColumn(name = "medical_service_request_id", nullable = false, unique = true, columnDefinition = "BIGINT UNSIGNED")
     private MedicalServiceRequest medicalServiceRequest;
 
     @Column(name = "service_name_at_billing", nullable = false, length = 180)

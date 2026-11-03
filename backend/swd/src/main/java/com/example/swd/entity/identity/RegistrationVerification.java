@@ -27,7 +27,7 @@ public class RegistrationVerification {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_account_id", nullable = false,
+    @JoinColumn(name = "user_account_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_registration_account"))
     private UserAccount userAccount;
 

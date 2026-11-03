@@ -8,9 +8,12 @@ import com.example.swd.dto.response.ApiResponse;
 import com.example.swd.dto.response.AppointmentResponse;
 import com.example.swd.dto.response.AppointmentTicketResponse;
 import com.example.swd.dto.response.BookingCheckoutResponse;
+import com.example.swd.dto.response.WorkflowViews;
 import com.example.swd.entity.appointment.Appointment;
 import com.example.swd.entity.identity.UserAccount;
+import com.example.swd.entity.patient.Patient;
 import com.example.swd.repository.AppointmentRepository;
+import com.example.swd.repository.PatientRepository;
 import com.example.swd.repository.UserAccountRepository;
 import com.example.swd.security.StaffPrincipal;
 import com.example.swd.service.AppointmentService;
@@ -38,6 +41,7 @@ public class AppointmentController {
     private final PayOSService payOSService;
     private final AppointmentRepository appointmentRepository;
     private final UserAccountRepository userAccountRepository;
+    private final PatientRepository patientRepository;
 
     /**
      * Đặt lịch khám và khởi tạo thanh toán payOS
@@ -77,30 +81,14 @@ public class AppointmentController {
     }
 
     /**
-     * Tiếp tân thực hiện Check-in
+     * Khung giờ khả dụng
      */
-    @PostMapping("/reception/appointments/{id}/check-in")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> checkIn(
-            @PathVariable Long id,
-            @AuthenticationPrincipal StaffPrincipal principal) {
-        AppointmentResponse response = appointmentService.checkIn(id, principal.accountId());
-        return ResponseEntity.ok(ApiResponse.ok("Check-in tiếp đón thành công", response));
-    }
-
-    /**
-     * Tiếp tân Hoàn tác Check-in
-     */
-    @PostMapping("/reception/appointments/{id}/undo-check-in")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> undoCheckIn(
-            @PathVariable Long id,
-            @RequestBody(required = false) UndoCheckInRequest request,
-            @AuthenticationPrincipal StaffPrincipal principal) {
-        if (request == null)
-            request = new UndoCheckInRequest();
-        AppointmentResponse response = appointmentService.undoCheckIn(id, request, principal.accountId());
-        return ResponseEntity.ok(ApiResponse.ok("Hoàn tác check-in thành công", response));
+    @GetMapping("/appointments/available-slots")
+    public ResponseEntity<ApiResponse<List<WorkflowViews.SlotView>>> getAvailableSlots(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long doctorId) {
+        List<WorkflowViews.SlotView> slots = appointmentService.getAvailableSlots(date, doctorId);
+        return ResponseEntity.ok(ApiResponse.ok("Danh sách khung giờ khả dụng", slots));
     }
 
     /**
@@ -151,7 +139,20 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getPatientAppointments(
             @RequestParam(required = false) Long patientId,
             @AuthenticationPrincipal StaffPrincipal principal) {
-        Long targetPatientId = patientId != null ? patientId : principal.accountId();
+        Long targetPatientId = patientId;
+        boolean isAdmin = principal != null && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
+
+        if (!isAdmin) {
+            targetPatientId = principal != null && principal.patientId() != null
+                    ? principal.patientId()
+                    : (principal != null && principal.accountId() != null
+                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId).orElse(null)
+                            : null);
+        }
+
+        if (targetPatientId == null) {
+            return ResponseEntity.ok(ApiResponse.ok("Chưa có hồ sơ bệnh nhân", List.of()));
+        }
         List<AppointmentResponse> list = appointmentService.getAppointmentsByPatient(targetPatientId);
         return ResponseEntity.ok(ApiResponse.ok(list));
     }

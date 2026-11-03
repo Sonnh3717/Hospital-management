@@ -38,7 +38,7 @@ public class Invoice extends AuditedEntity {
     private String invoiceNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "encounter_id", nullable = false)
+    @JoinColumn(name = "encounter_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private Encounter encounter;
 
     @Enumerated(EnumType.STRING)

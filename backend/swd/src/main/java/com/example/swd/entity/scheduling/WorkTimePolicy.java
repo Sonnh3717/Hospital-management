@@ -34,7 +34,7 @@ public class WorkTimePolicy extends AuditedEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "role_id", nullable = false, unique = true,
+    @JoinColumn(name = "role_id", nullable = false, unique = true, columnDefinition = "TINYINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t08_01"))
     private Role role;
 
@@ -51,7 +51,7 @@ public class WorkTimePolicy extends AuditedEntity {
     private Integer scheduleChangeNoticeDays = 7;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "updated_by_staff_id", nullable = false,
+    @JoinColumn(name = "updated_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t08_02"))
     private HospitalStaff updatedByStaff;
 }

@@ -43,15 +43,15 @@ public class MedicalServiceRequest {
     private String requestCode;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "encounter_id", nullable = false)
+    @JoinColumn(name = "encounter_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private Encounter encounter;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "requesting_doctor_id", nullable = false)
+    @JoinColumn(name = "requesting_doctor_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private DoctorProfile requestingDoctor;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medical_service_id", nullable = false)
+    @JoinColumn(name = "medical_service_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private MedicalService medicalService;
 
     @Enumerated(EnumType.STRING)
@@ -66,16 +66,16 @@ public class MedicalServiceRequest {
     private Status status = Status.ORDERED;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsible_staff_id")
+    @JoinColumn(name = "responsible_staff_id", columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff responsibleStaff;
 
     // The actual database FK also verifies that this staff member is assigned to this service.
     // Both read-only join columns remain optional for Hibernate; medicalService owns NOT NULL.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "responsible_staff_id", referencedColumnName = "staff_id",
+            @JoinColumn(name = "responsible_staff_id", referencedColumnName = "staff_id", columnDefinition = "BIGINT UNSIGNED",
                     insertable = false, updatable = false),
-            @JoinColumn(name = "medical_service_id", referencedColumnName = "medical_service_id",
+            @JoinColumn(name = "medical_service_id", referencedColumnName = "medical_service_id", columnDefinition = "BIGINT UNSIGNED",
                     insertable = false, updatable = false)
     })
     @Setter(lombok.AccessLevel.NONE)
@@ -109,14 +109,14 @@ public class MedicalServiceRequest {
     private String unableReason;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unable_recorded_by_staff_id")
+    @JoinColumn(name = "unable_recorded_by_staff_id", columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff unableRecordedByStaff;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "unable_recorded_by_staff_id", referencedColumnName = "staff_id",
+            @JoinColumn(name = "unable_recorded_by_staff_id", referencedColumnName = "staff_id", columnDefinition = "BIGINT UNSIGNED",
                     insertable = false, updatable = false),
-            @JoinColumn(name = "medical_service_id", referencedColumnName = "medical_service_id",
+            @JoinColumn(name = "medical_service_id", referencedColumnName = "medical_service_id", columnDefinition = "BIGINT UNSIGNED",
                     insertable = false, updatable = false)
     })
     @Setter(lombok.AccessLevel.NONE)

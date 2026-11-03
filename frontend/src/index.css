@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased min-h-screen font-sans;
+  }
+}
+
+/* Custom utility styles for healthcare UI */
+.bg-hospital-gradient {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+}

@@ -1,6 +1,7 @@
 package com.example.swd.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,14 @@ public class SecurityConfig {
         }
 
         @Bean
+        public FilterRegistrationBean<SessionAuthenticationFilter> sessionAuthenticationFilterRegistration(
+                        SessionAuthenticationFilter filter) {
+                FilterRegistrationBean<SessionAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+                registration.setEnabled(false);
+                return registration;
+        }
+
+        @Bean
         SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 return http
                                 .cors(Customizer.withDefaults())
@@ -44,8 +53,9 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/patients/register", "/api/patients/send-otp", "/api/patients/verify-otp").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/patients/register", "/api/patients/send-otp", "/api/patients/verify-otp", "/api/patients/complete-profile").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/patients/check-username").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/appointments/available-slots").permitAll()
                                                 .requestMatchers("/api/auth/me", "/api/auth/logout").authenticated()
                                                 .requestMatchers("/api/reception/**").hasRole("RECEPTIONIST")
                                                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")

@@ -26,18 +26,18 @@ public class StaffMedicalService extends AuditedEntity {
 
     @MapsId("staffId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "staff_id", nullable = false)
+    @JoinColumn(name = "staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff staff;
 
     @MapsId("medicalServiceId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medical_service_id", nullable = false)
+    @JoinColumn(name = "medical_service_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private MedicalService medicalService;
 
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "assigned_by_staff_id", nullable = false)
+    @JoinColumn(name = "assigned_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff assignedByStaff;
 }

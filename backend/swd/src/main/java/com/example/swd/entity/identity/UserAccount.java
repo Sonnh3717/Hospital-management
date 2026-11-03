@@ -36,7 +36,7 @@ public class UserAccount extends AuditedEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "role_id", nullable = false,
+    @JoinColumn(name = "role_id", nullable = false, columnDefinition = "TINYINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t02_01"))
     private Role role;
 

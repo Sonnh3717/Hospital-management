@@ -33,12 +33,12 @@ public class WorkSchedule extends AuditedEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "staff_id", nullable = false,
+    @JoinColumn(name = "staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t07_01"))
     private HospitalStaff staff;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "shift_template_id", nullable = false,
+    @JoinColumn(name = "shift_template_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t07_02"))
     private ShiftTemplate shiftTemplate;
 
@@ -53,7 +53,7 @@ public class WorkSchedule extends AuditedEntity {
     private ScheduleStatus status = ScheduleStatus.SCHEDULED;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "assigned_by_staff_id", nullable = false,
+    @JoinColumn(name = "assigned_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t07_03"))
     private HospitalStaff assignedByStaff;
 

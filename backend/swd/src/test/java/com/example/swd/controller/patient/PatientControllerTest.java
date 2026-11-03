@@ -26,6 +26,8 @@ class PatientControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean AuthService auth;
     @MockitoBean AuthSessionRepository sessions;
+    @MockitoBean com.example.swd.repository.HospitalStaffRepository staffRepository;
+    @MockitoBean com.example.swd.repository.PatientRepository patientRepository;
     @MockitoBean PatientRegistrationService registration;
 
     @Test void publicAvailabilityIgnoresStaleBearerToken() throws Exception {

@@ -4,6 +4,7 @@ import com.example.swd.mapper.WorkflowMapper;
 import com.example.swd.service.PatientRegistrationService;
 import com.example.swd.service.PatientRegistrationService.OtpView;
 import com.example.swd.service.PatientRegistrationService.VerifiedView;
+import com.example.swd.service.PatientRegistrationService.CompletedProfileView;
 
 import com.example.swd.dto.request.RegistrationCommands;
 import com.example.swd.entity.common.enums.ActiveStatus;
@@ -92,7 +93,6 @@ public class PatientRegistrationServiceImpl implements com.example.swd.service.P
         verification.setTermsAcceptedAt(now());
         String otp = issue(verification);
         verifications.saveAndFlush(verification);
-        // A delivery failure rolls back all three records, so the form can safely retry registration.
         email.sendOtp(address, otp);
         return otpView(account, verification);
     }
@@ -142,6 +142,63 @@ public class PatientRegistrationServiceImpl implements com.example.swd.service.P
         account.setStatus(ActiveStatus.ACTIVE);
         verification.setVerifiedAt(now());
         return verifiedView(account);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public CompletedProfileView completeProfile(RegistrationCommands.CompleteProfile input) {
+        String address = normalizeEmail(input.email());
+        UserAccount account = lockAccount(address);
+
+        Patient patient = null;
+        if (account.getStatus() == ActiveStatus.ACTIVE) {
+            patient = patients.findByUserAccount_Id(account.getId()).orElse(null);
+            if (patient != null && patient.getDateOfBirth() != null) {
+                throw new WorkflowException(HttpStatus.CONFLICT, "PROFILE_ALREADY_COMPLETED",
+                        "Hồ sơ bệnh nhân đã được hoàn tất trước đó.");
+            }
+        }
+
+        RegistrationVerification verification = verifications.lockByAccountId(account.getId())
+                .orElseThrow(PatientRegistrationServiceImpl::notPending);
+
+        if (verification.getVerifiedAt() == null) {
+            throw new WorkflowException(HttpStatus.BAD_REQUEST, "OTP_NOT_VERIFIED",
+                    "Email chưa được xác thực OTP. Vui lòng xác thực mã OTP trước khi hoàn tất hồ sơ.");
+        }
+
+        if (patient == null) {
+            patient = patients.findByUserAccount_Id(account.getId())
+                    .orElseGet(() -> {
+                        Patient newP = new Patient();
+                        newP.setUserAccount(account);
+                        newP.setPatientCode("PT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+                        return newP;
+                    });
+        }
+
+        if (patient.getPatientCode() == null || patient.getPatientCode().isBlank()) {
+            patient.setPatientCode("PT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+        }
+
+        patient.setFullName(input.fullName().trim());
+        patient.setDateOfBirth(input.dateOfBirth());
+        patient.setGender(input.gender());
+        patient.setPhone(input.phone().trim());
+        patient.setAddress(input.address().trim());
+        patient.setContactEmail(address);
+        patient.setEmergencyContactName(normalize(input.emergencyContactName()));
+        patient.setEmergencyContactPhone(normalize(input.emergencyContactPhone()));
+
+        account.setStatus(ActiveStatus.ACTIVE);
+        accounts.saveAndFlush(account);
+        patients.saveAndFlush(patient);
+        verifications.delete(verification);
+
+        return new CompletedProfileView(patient.getId(), patient.getPatientCode(), patient.getFullName());
+    }
+
+    private static String normalize(String str) {
+        return str == null || str.isBlank() ? null : str.trim();
     }
 
     @Transactional(readOnly = true)

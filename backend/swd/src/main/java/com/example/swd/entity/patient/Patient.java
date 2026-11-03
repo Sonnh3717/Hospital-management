@@ -37,7 +37,7 @@ public class Patient extends AuditedEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "user_account_id", nullable = true, unique = true,
+    @JoinColumn(name = "user_account_id", nullable = true, unique = true, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t05_01"))
     private UserAccount userAccount;
 

@@ -38,6 +38,7 @@ public class RegistrationEmailService {
         try {
             sender.send(message);
         } catch (MailException ex) {
+            System.out.println(ex.getMessage());
             throw unavailable();
         }
     }

@@ -19,9 +19,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.swd.dto.response.ApiResponse;
+import com.example.swd.dto.response.WorkflowViews;
+import com.example.swd.mapper.WorkflowMapper;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +41,7 @@ public class AppointmentServiceImpl implements com.example.swd.service.Appointme
     private final HospitalStaffRepository hospitalStaffRepository;
     private final UserAccountRepository userAccountRepository;
     private final EncounterRepository encounterRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
 
     @Transactional
     public AppointmentResponse createAppointment(CreateAppointmentRequest request, Long currentAccountId) {
@@ -255,6 +262,39 @@ public class AppointmentServiceImpl implements com.example.swd.service.Appointme
                 .paymentStatus("PAID")
                 .qrCodeData(qrData)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkflowViews.SlotView> getAvailableSlots(LocalDate date, Long doctorId) {
+        ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDate queryDate = date != null ? date : LocalDate.now(vietnamZone);
+        LocalDateTime from = queryDate.atStartOfDay(vietnamZone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        LocalDateTime to = queryDate.plusDays(1).atStartOfDay(vietnamZone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        List<AppointmentSlot> slots = appointmentSlotRepository.findForDate(from, to);
+        List<WorkflowViews.SlotView> result = new ArrayList<>();
+
+        for (AppointmentSlot slot : slots) {
+            if (slot.getStatus() != AppointmentSlot.Status.OPEN || !slot.getEndsAt().isAfter(now)) {
+                continue;
+            }
+            if (doctorId != null && !slot.getWorkSchedule().getStaff().getId().equals(doctorId)) {
+                continue;
+            }
+            int activeCount = (int) appointmentRepository.countActiveBySlotId(slot.getId());
+            int remaining = slot.getCapacity() - activeCount;
+            if (remaining <= 0) {
+                continue;
+            }
+            var doctorOpt = doctorProfileRepository.findById(slot.getWorkSchedule().getStaff().getId());
+            if (doctorOpt.isPresent()) {
+                result.add(WorkflowMapper.slot(slot, doctorOpt.get(), remaining));
+            } else {
+                result.add(WorkflowMapper.slot(slot, remaining));
+            }
+        }
+        return result;
     }
 
     private Patient resolveOrCreatePatient(CreateAppointmentRequest request, UserAccount currentAccount) {

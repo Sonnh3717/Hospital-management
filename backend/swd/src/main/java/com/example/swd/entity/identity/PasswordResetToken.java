@@ -34,7 +34,7 @@ public class PasswordResetToken extends CreatedEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_account_id", nullable = false)
+    @JoinColumn(name = "user_account_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private UserAccount userAccount;
 
     @JdbcTypeCode(SqlTypes.BINARY)

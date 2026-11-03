@@ -16,6 +16,7 @@ import com.example.swd.entity.encounter.Encounter;
 import com.example.swd.entity.patient.Patient;
 import com.example.swd.entity.scheduling.WorkSchedule;
 import com.example.swd.entity.staff.DoctorProfile;
+import com.example.swd.entity.staff.HospitalStaff;
 import com.example.swd.exception.WorkflowException;
 import com.example.swd.repository.AppointmentRepository;
 import com.example.swd.repository.AppointmentSlotRepository;
@@ -182,7 +183,7 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         }
         appointment.setStatus(Appointment.Status.CHECKED_IN);
         appointment.setCheckedInAt(now());
-        appointment.setCheckedInByStaff(staff.getReferenceById(actor.staffId()));
+        appointment.setCheckedInByStaff(staff.getReferenceById(effectiveStaffId(actor)));
         appointments.flush();
         return view(appointment);
     }
@@ -196,7 +197,7 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         appointment.setStatus(Appointment.Status.BOOKED);
         clearCheckIn(appointment);
         appointment.setLastCheckInReversedAt(now());
-        appointment.setLastCheckInReversedByStaff(staff.getReferenceById(actor.staffId()));
+        appointment.setLastCheckInReversedByStaff(staff.getReferenceById(effectiveStaffId(actor)));
         appointments.flush();
         return view(appointment);
     }
@@ -209,7 +210,6 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         if (appointment.getStatus() != Appointment.Status.BOOKED && appointment.getStatus() != Appointment.Status.CHECKED_IN) {
             throw state("Lịch hẹn không còn được phép hủy.");
         }
-        requireNotice(appointment, appointment.getAppointmentSlot().getAppointmentRule().getCancellationNoticeMinutes(), "hủy lịch");
         appointment.setStatus(Appointment.Status.CANCELLED);
         clearCheckIn(appointment);
         appointment.setCancelledAt(now());
@@ -225,7 +225,6 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         requireNoEncounter(appointment, "Bệnh nhân đã bắt đầu khám, không thể đổi lịch.");
         if (appointment.getStatus() != Appointment.Status.BOOKED) throw state("Hoàn tác check-in trước khi đổi lịch.");
         if (appointment.getAppointmentSlot().getId().equals(destinationId)) return view(appointment);
-        requireNotice(appointment, appointment.getAppointmentSlot().getAppointmentRule().getRescheduleNoticeMinutes(), "đổi lịch");
         AppointmentSlot destination = slots.lockById(destinationId).orElseThrow(() -> missing("Khung giờ"));
         validateSlot(destination, appointment.getBookingSource());
         ensureCapacity(destination);
@@ -306,12 +305,6 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
         }
     }
 
-    private void requireNotice(Appointment appointment, long noticeMinutes, String action) {
-        if (appointment.getAppointmentSlot().getStartsAt().isBefore(now().plusMinutes(noticeMinutes))) {
-            throw new WorkflowException(HttpStatus.CONFLICT, "NOTICE_PERIOD", "Không đủ thời gian báo trước để " + action + " theo quy định.");
-        }
-    }
-
     private static Patient newPatient(NewPatient input) {
         Patient patient = new Patient();
         patient.setPatientCode("PT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
@@ -346,6 +339,17 @@ public class ReceptionAppointmentServiceImpl implements com.example.swd.service.
     private static void clearCheckIn(Appointment appointment) { appointment.setCheckedInAt(null); appointment.setCheckedInByStaff(null); }
     private static void receptionist(StaffPrincipal actor) {
         if (actor == null || !"RECEPTIONIST".equals(actor.role())) throw new WorkflowException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Chức năng dành cho nhân viên tiếp nhận.");
+    }
+    private Long effectiveStaffId(StaffPrincipal actor) {
+        if (actor != null && actor.staffId() != null) {
+            return actor.staffId();
+        }
+        if (actor == null || actor.accountId() == null) {
+            throw new WorkflowException(HttpStatus.FORBIDDEN, "STAFF_NOT_FOUND", "Không tìm thấy hồ sơ nhân viên tiếp nhận.");
+        }
+        return staff.findByUserAccount_Id(actor.accountId())
+                .map(HospitalStaff::getId)
+                .orElseThrow(() -> new WorkflowException(HttpStatus.FORBIDDEN, "STAFF_NOT_FOUND", "Không tìm thấy hồ sơ nhân viên tiếp nhận."));
     }
     private static WorkflowException missing(String resource) { return new WorkflowException(HttpStatus.NOT_FOUND, "NOT_FOUND", resource + " không tồn tại."); }
     private static WorkflowException invalid(String field, String message) { return new WorkflowException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", message, Map.of(field, message), List.of()); }

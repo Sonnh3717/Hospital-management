@@ -38,11 +38,11 @@ public class Payment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "invoice_id", nullable = true)
+    @JoinColumn(name = "invoice_id", nullable = true, columnDefinition = "BIGINT UNSIGNED")
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "initiated_by_account_id", nullable = false)
+    @JoinColumn(name = "initiated_by_account_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private UserAccount initiatedByAccount;
 
     @Column(name = "payment_reference", nullable = false, length = 64,

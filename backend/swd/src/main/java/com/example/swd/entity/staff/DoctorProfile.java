@@ -30,7 +30,7 @@ public class DoctorProfile extends AuditedEntity {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "doctor_id", nullable = false,
+    @JoinColumn(name = "doctor_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t04_01"))
     private HospitalStaff staff;
 

@@ -4,6 +4,7 @@ import com.example.swd.service.impl.PatientRegistrationServiceImpl;
 
 import com.example.swd.dto.request.RegistrationCommands;
 import com.example.swd.entity.common.enums.ActiveStatus;
+import com.example.swd.entity.common.enums.Gender;
 import com.example.swd.entity.identity.RegistrationVerification;
 import com.example.swd.entity.identity.Role;
 import com.example.swd.entity.identity.UserAccount;
@@ -15,6 +16,7 @@ import com.example.swd.repository.RoleRepository;
 import com.example.swd.repository.UserAccountRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -196,6 +198,88 @@ class PatientRegistrationServiceTest {
         assertEquals("INVALID_OTP", assertThrows(WorkflowException.class,
                 () -> registration.verifyOtp(new RegistrationCommands.VerifyOtp("patient@example.test", null))).getCode());
         verifyNoInteractions(accounts, patients, verifications, email);
+    }
+
+    @Test void completeProfileSucceedsWhenOtpVerified() {
+        pending();
+        verification.setVerifiedAt(now);
+        Patient p = new Patient();
+        p.setId(5L);
+        p.setPatientCode("PT-OLD");
+        when(patients.findByUserAccount_Id(10L)).thenReturn(Optional.of(p));
+
+        var input = new RegistrationCommands.CompleteProfile(
+                "PATIENT@example.test", "Nguyễn Văn An", LocalDate.of(1995, 5, 20),
+                Gender.MALE, "0901234567", "123 Giải Phóng, Hà Nội", "Nguyễn Thị Bình", "0909888777"
+        );
+
+        var result = registration.completeProfile(input);
+        assertNotNull(result);
+        assertEquals(5L, result.patientId());
+        assertEquals("Nguyễn Văn An", result.fullName());
+        assertEquals(ActiveStatus.ACTIVE, account.getStatus());
+        assertEquals("0901234567", p.getPhone());
+        assertEquals("123 Giải Phóng, Hà Nội", p.getAddress());
+        assertEquals(Gender.MALE, p.getGender());
+        assertEquals("Nguyễn Thị Bình", p.getEmergencyContactName());
+        assertEquals("0909888777", p.getEmergencyContactPhone());
+        verify(accounts).saveAndFlush(account);
+        verify(patients).saveAndFlush(p);
+        verify(verifications).delete(verification);
+    }
+
+    @Test void completeProfileFailsWhenProfileAlreadyCompleted() {
+        when(accounts.lockByLoginEmail(account.getLoginEmail())).thenReturn(Optional.of(account));
+        account.setStatus(ActiveStatus.ACTIVE);
+        Patient p = new Patient();
+        p.setId(5L);
+        p.setPatientCode("PT-OLD");
+        p.setDateOfBirth(LocalDate.of(1995, 5, 20));
+        when(patients.findByUserAccount_Id(10L)).thenReturn(Optional.of(p));
+
+        var input = new RegistrationCommands.CompleteProfile(
+                "PATIENT@example.test", "Nguyễn Văn Mới", LocalDate.of(1996, 6, 21),
+                Gender.MALE, "0901234567", "123 Giải Phóng, Hà Nội", null, null
+        );
+
+        WorkflowException ex = assertThrows(WorkflowException.class, () -> registration.completeProfile(input));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("PROFILE_ALREADY_COMPLETED", ex.getCode());
+        verify(patients, never()).saveAndFlush(any());
+        verify(verifications, never()).delete(any());
+    }
+
+    @Test void completeProfileFailsWhenOtpNotVerified() {
+        pending();
+        verification.setVerifiedAt(null);
+
+        var input = new RegistrationCommands.CompleteProfile(
+                "PATIENT@example.test", "Nguyễn Văn An", LocalDate.of(1995, 5, 20),
+                Gender.MALE, "0901234567", "123 Giải Phóng, Hà Nội", null, null
+        );
+
+        WorkflowException ex = assertThrows(WorkflowException.class, () -> registration.completeProfile(input));
+        assertEquals("OTP_NOT_VERIFIED", ex.getCode());
+        verify(patients, never()).saveAndFlush(any());
+    }
+
+    @Test void completeProfileCreatesPatientIfMissing() {
+        pending();
+        verification.setVerifiedAt(now);
+        when(patients.findByUserAccount_Id(10L)).thenReturn(Optional.empty());
+
+        var input = new RegistrationCommands.CompleteProfile(
+                "patient@example.test", "Trần Thị Cúc", LocalDate.of(2000, 1, 1),
+                Gender.FEMALE, "0912345678", "456 Cầu Giấy, Hà Nội", null, null
+        );
+
+        var result = registration.completeProfile(input);
+        assertNotNull(result);
+        assertEquals("Trần Thị Cúc", result.fullName());
+        assertTrue(result.patientCode().startsWith("PT-"));
+        assertEquals(ActiveStatus.ACTIVE, account.getStatus());
+        verify(patients).saveAndFlush(any(Patient.class));
+        verify(verifications).delete(verification);
     }
 
     private RegistrationCommands.Register input() {

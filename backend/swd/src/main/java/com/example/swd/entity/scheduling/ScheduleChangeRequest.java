@@ -33,12 +33,12 @@ public class ScheduleChangeRequest {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "work_schedule_id", nullable = false,
+    @JoinColumn(name = "work_schedule_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t09_01"))
     private WorkSchedule workSchedule;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "requested_by_staff_id", nullable = false,
+    @JoinColumn(name = "requested_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t09_02"))
     private HospitalStaff requestedByStaff;
 
@@ -75,7 +75,7 @@ public class ScheduleChangeRequest {
     private LocalDateTime submittedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "processed_by_staff_id", nullable = true,
+    @JoinColumn(name = "processed_by_staff_id", nullable = true, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t09_03"))
     private HospitalStaff processedByStaff;
 

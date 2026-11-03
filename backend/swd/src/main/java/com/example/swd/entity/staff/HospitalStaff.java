@@ -38,7 +38,7 @@ public class HospitalStaff extends AuditedEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_account_id", nullable = false, unique = true,
+    @JoinColumn(name = "user_account_id", nullable = false, unique = true, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t03_01"))
     private UserAccount userAccount;
 

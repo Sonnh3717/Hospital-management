@@ -35,7 +35,7 @@ public class MedicalServiceResult {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medical_service_request_id", nullable = false, unique = true)
+    @JoinColumn(name = "medical_service_request_id", nullable = false, unique = true, columnDefinition = "BIGINT UNSIGNED")
     private MedicalServiceRequest medicalServiceRequest;
 
     @Column(name = "result_summary", nullable = false, columnDefinition = "TEXT")
@@ -48,7 +48,7 @@ public class MedicalServiceResult {
     private String attachmentUrl;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "recorded_by_staff_id", nullable = false)
+    @JoinColumn(name = "recorded_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff recordedByStaff;
 
     @Generated(event = EventType.INSERT)

@@ -30,7 +30,7 @@ public class ScheduleEvent extends AuditedEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "staff_id", nullable = false,
+    @JoinColumn(name = "staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t10_01"))
     private HospitalStaff staff;
 
@@ -50,7 +50,7 @@ public class ScheduleEvent extends AuditedEntity {
     private Boolean blocksBooking = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "created_by_staff_id", nullable = false,
+    @JoinColumn(name = "created_by_staff_id", nullable = false, columnDefinition = "BIGINT UNSIGNED",
             foreignKey = @ForeignKey(name = "fk_t10_02"))
     private HospitalStaff createdByStaff;
 }

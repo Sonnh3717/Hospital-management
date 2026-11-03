@@ -37,7 +37,7 @@ public class PatientFeedback extends AuditedEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "appointment_id", nullable = false, unique = true)
+    @JoinColumn(name = "appointment_id", nullable = false, unique = true, columnDefinition = "BIGINT UNSIGNED")
     private Appointment appointment;
 
     @Column(name = "rating", nullable = false, columnDefinition = "TINYINT UNSIGNED")
@@ -51,7 +51,7 @@ public class PatientFeedback extends AuditedEntity {
     private HandlingStatus handlingStatus = HandlingStatus.NEW;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "handled_by_staff_id")
+    @JoinColumn(name = "handled_by_staff_id", columnDefinition = "BIGINT UNSIGNED")
     private HospitalStaff handledByStaff;
 
     @Column(name = "handling_note", columnDefinition = "TEXT")

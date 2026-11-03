@@ -35,11 +35,11 @@ public class ServiceResultReview {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medical_service_result_id", nullable = false, unique = true)
+    @JoinColumn(name = "medical_service_result_id", nullable = false, unique = true, columnDefinition = "BIGINT UNSIGNED")
     private MedicalServiceResult medicalServiceResult;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reviewing_doctor_id", nullable = false)
+    @JoinColumn(name = "reviewing_doctor_id", nullable = false, columnDefinition = "BIGINT UNSIGNED")
     private DoctorProfile reviewingDoctor;
 
     @Column(name = "handling_decision", nullable = false, columnDefinition = "TEXT")

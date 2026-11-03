@@ -1,6 +1,7 @@
 package com.example.swd.controller.patient;
 
 import com.example.swd.dto.request.RegistrationCommands;
+import com.example.swd.dto.response.ApiResponse;
 import com.example.swd.service.PatientRegistrationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +33,12 @@ public class PatientController {
     @PostMapping("/verify-otp")
     PatientRegistrationService.VerifiedView verifyOtp(@Valid @RequestBody RegistrationCommands.VerifyOtp input) {
         return registration.verifyOtp(input);
+    }
+
+    @PostMapping("/complete-profile")
+    public ApiResponse<PatientRegistrationService.CompletedProfileView> completeProfile(
+            @Valid @RequestBody RegistrationCommands.CompleteProfile input) {
+        return ApiResponse.ok("Hồ sơ bệnh nhân đã được hoàn tất thành công", registration.completeProfile(input));
     }
 
     @GetMapping("/check-username")
