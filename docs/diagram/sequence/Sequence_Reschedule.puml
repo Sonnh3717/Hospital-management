@@ -1,0 +1,85 @@
+@startuml Sequence_Reschedule
+title Sequence Diagram: Appointment Rescheduling (Reschedule)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "User" as User
+participant "AppointmentManagementPage" as AppointmentManagementPage <<boundary>>
+participant "AppointmentController" as AppointmentController <<control>>
+participant "AppointmentServiceImpl" as AppointmentServiceImpl <<control>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+participant "AppointmentSlotRepository" as AppointmentSlotRepository <<database>>
+participant "EncounterRepository" as EncounterRepository <<database>>
+
+User -> AppointmentManagementPage: select appointment and click "Reschedule"
+activate AppointmentManagementPage
+
+User -> AppointmentManagementPage: select new date, shift and doctor
+User -> AppointmentManagementPage: click "Confirm Reschedule" button
+
+AppointmentManagementPage -> AppointmentController: rescheduleAppointment(appointmentId, destinationSlotId)
+activate AppointmentController
+
+AppointmentController -> AppointmentServiceImpl: rescheduleAppointment(appointmentId, destinationSlotId, accountId)
+activate AppointmentServiceImpl
+
+AppointmentServiceImpl -> AppointmentRepository: lockAppointmentById(appointmentId)
+activate AppointmentRepository
+AppointmentRepository --> AppointmentServiceImpl: return currentAppointment
+deactivate AppointmentRepository
+
+alt Patient is already checked in or consultation started
+    AppointmentServiceImpl -> EncounterRepository: findByAppointmentId(appointmentId)
+    activate EncounterRepository
+    EncounterRepository --> AppointmentServiceImpl: return encounterEntity
+    deactivate EncounterRepository
+    AppointmentServiceImpl --> AppointmentController: throw CannotRescheduleException()
+    AppointmentController --> AppointmentManagementPage: return errorResponse("Undo check-in required before rescheduling")
+    AppointmentManagementPage --> User: display error message("Cannot reschedule: patient already checked-in")
+else Appointment is valid in BOOKED status
+    AppointmentServiceImpl -> AppointmentSlotRepository: lockSlotById(destinationSlotId)
+    activate AppointmentSlotRepository
+    AppointmentSlotRepository --> AppointmentServiceImpl: return destinationSlot
+    deactivate AppointmentSlotRepository
+
+    AppointmentServiceImpl -> AppointmentServiceImpl: validateSlotAndEnsureCapacity(destinationSlot)
+
+    alt Destination slot is fully booked or closed
+        AppointmentServiceImpl --> AppointmentController: throw SlotFullException()
+        AppointmentController --> AppointmentManagementPage: return errorResponse("Destination slot is full")
+        AppointmentManagementPage --> User: display error message("Selected slot is full, please choose another slot")
+    else Reschedule successful
+        AppointmentServiceImpl -> AppointmentRepository: updateSlot(destinationSlot, rescheduledTime, accountId)
+        activate AppointmentRepository
+        AppointmentRepository --> AppointmentServiceImpl: return updatedAppointment
+        deactivate AppointmentRepository
+
+        AppointmentServiceImpl --> AppointmentController: return appointmentResponse(appointment)
+        deactivate AppointmentServiceImpl
+
+        AppointmentController --> AppointmentManagementPage: return rescheduleSuccess(appointmentResponse)
+        deactivate AppointmentController
+
+        AppointmentManagementPage --> User: display success notification and render updated appointment ticket
+        deactivate AppointmentManagementPage
+    end
+end
+
+@enduml

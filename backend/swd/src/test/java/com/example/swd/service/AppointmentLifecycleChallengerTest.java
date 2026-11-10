@@ -17,7 +17,7 @@ import com.example.swd.entity.scheduling.WorkSchedule;
 import com.example.swd.entity.staff.DoctorProfile;
 import com.example.swd.entity.staff.HospitalStaff;
 import com.example.swd.exception.WorkflowException;
-import com.example.swd.integration.PayOSService;
+import com.example.swd.config.PayOSService;
 import com.example.swd.repository.*;
 import com.example.swd.security.StaffPrincipal;
 import com.example.swd.service.impl.AppointmentServiceImpl;

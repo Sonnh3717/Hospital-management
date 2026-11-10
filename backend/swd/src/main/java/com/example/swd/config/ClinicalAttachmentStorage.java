@@ -1,4 +1,4 @@
-package com.example.swd.integration;
+package com.example.swd.config;
 
 import com.example.swd.exception.WorkflowException;
 import java.io.IOException;

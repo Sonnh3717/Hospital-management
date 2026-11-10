@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.1"
+         xmlns:uml="http://schema.omg.org/spec/UML/2.1"
+         xmlns:xmi="http://schema.omg.org/spec/XMI/2.1">
+  <uml:Model xmi:type="uml:Model" xmi:id="_Hospital_Auth_Model" name="HospitalManagement_Login">
+    <!-- Primitive Data Types -->
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_string" name="String"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_long" name="Long"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_short" name="Short"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_boolean" name="Boolean"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_void" name="void"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_localdatetime" name="LocalDateTime"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_type_response_entity" name="ResponseEntity"/>
+
+    <!-- ========================================== -->
+    <!-- ENUMERATIONS                              -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Enumeration" xmi:id="_enum_RoleCode" name="RoleCode">
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_ADMIN" name="ADMIN"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_MANAGER" name="MANAGER"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_DOCTOR" name="DOCTOR"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_MEDICAL_SERVICE_STAFF" name="MEDICAL_SERVICE_STAFF"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_RECEPTIONIST" name="RECEPTIONIST"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_PATIENT" name="PATIENT"/>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Enumeration" xmi:id="_enum_RevocationReason" name="RevocationReason">
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_LOGOUT" name="LOGOUT"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_ACCOUNT_DISABLED" name="ACCOUNT_DISABLED"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_PASSWORD_RESET" name="PASSWORD_RESET"/>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Enumeration" xmi:id="_enum_ActiveStatus" name="ActiveStatus">
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_ACTIVE" name="ACTIVE"/>
+      <ownedLiteral xmi:type="uml:EnumerationLiteral" xmi:id="_lit_INACTIVE" name="INACTIVE"/>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- DTOs                                       -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Class" xmi:id="_class_LoginRequest" name="LoginRequest">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_req_username" name="username" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_req_password" name="password" visibility="private" type="_type_string"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_req_getUsername" name="getUsername" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_req_getUsername" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_req_getPassword" name="getPassword" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_req_getPassword" direction="return" type="_type_string"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Class" xmi:id="_class_LoginResponse" name="LoginResponse">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_resp_token" name="token" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_resp_user" name="user" visibility="private" type="_class_UserInfoResponse"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_resp_getToken" name="getToken" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_resp_getToken" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_resp_getUser" name="getUser" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_resp_getUser" direction="return" type="_class_UserInfoResponse"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Class" xmi:id="_class_UserInfoResponse" name="UserInfoResponse">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_uinfo_id" name="id" visibility="private" type="_type_long"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_uinfo_username" name="username" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_uinfo_email" name="email" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_uinfo_role" name="role" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_uinfo_fullName" name="fullName" visibility="private" type="_type_string"/>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- ENTITIES (Domain Models)                   -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Class" xmi:id="_entity_Role" name="Role">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_role_id" name="id" visibility="private" type="_type_short"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_role_roleCode" name="roleCode" visibility="private" type="_enum_RoleCode"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_role_roleName" name="roleName" visibility="private" type="_type_string"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_role_getId" name="getId" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_role_getId" direction="return" type="_type_short"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_role_getRoleCode" name="getRoleCode" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_role_getRoleCode" direction="return" type="_enum_RoleCode"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_role_getRoleName" name="getRoleName" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_role_getRoleName" direction="return" type="_type_string"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Class" xmi:id="_entity_UserAccount" name="UserAccount">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_id" name="id" visibility="private" type="_type_long"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_role" name="role" visibility="private" type="_entity_Role"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_username" name="username" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_loginEmail" name="loginEmail" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_passwordHash" name="passwordHash" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_status" name="status" visibility="private" type="_enum_ActiveStatus"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ua_passwordChangedAt" name="passwordChangedAt" visibility="private" type="_type_localdatetime"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ua_getId" name="getId" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ua_getId" direction="return" type="_type_long"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ua_getUsername" name="getUsername" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ua_getUsername" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ua_getLoginEmail" name="getLoginEmail" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ua_getLoginEmail" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ua_getPasswordHash" name="getPasswordHash" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ua_getPasswordHash" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ua_getStatus" name="getStatus" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ua_getStatus" direction="return" type="_enum_ActiveStatus"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Class" xmi:id="_entity_AuthSession" name="AuthSession">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_as_id" name="id" visibility="private" type="_type_string"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_as_userAccount" name="userAccount" visibility="private" type="_entity_UserAccount"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_as_expiresAt" name="expiresAt" visibility="private" type="_type_localdatetime"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_as_revokedAt" name="revokedAt" visibility="private" type="_type_localdatetime"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_as_revocationReason" name="revocationReason" visibility="private" type="_enum_RevocationReason"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_as_getId" name="getId" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_as_getId" direction="return" type="_type_string"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_as_getUserAccount" name="getUserAccount" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_as_getUserAccount" direction="return" type="_entity_UserAccount"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_as_getExpiresAt" name="getExpiresAt" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_as_getExpiresAt" direction="return" type="_type_localdatetime"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- REPOSITORIES (Interfaces)                  -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Interface" xmi:id="_repo_RoleRepository" name="RoleRepository">
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_findByRoleCode" name="findByRoleCode" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_roleCode" name="roleCode" type="_enum_RoleCode"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_findByRoleCode" direction="return" type="_entity_Role"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Interface" xmi:id="_repo_UserAccountRepository" name="UserAccountRepository">
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_findForLogin" name="findForLogin" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_login" name="login" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_findForLogin" direction="return" type="_entity_UserAccount"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_findByUsername" name="findByUsername" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_uname" name="username" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_findByUsername" direction="return" type="_entity_UserAccount"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_findByLoginEmail" name="findByLoginEmail" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_email" name="loginEmail" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_findByLoginEmail" direction="return" type="_entity_UserAccount"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_saveAccount" name="save" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_account" name="account" type="_entity_UserAccount"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_saveAccount" direction="return" type="_entity_UserAccount"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Interface" xmi:id="_repo_AuthSessionRepository" name="AuthSessionRepository">
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_findForAuth" name="findForAuthentication" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_sessionId" name="id" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_findForAuth" direction="return" type="_entity_AuthSession"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_repo_saveSession" name="save" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_repo_session" name="session" type="_entity_AuthSession"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_repo_saveSession" direction="return" type="_entity_AuthSession"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- SERVICE LAYER                              -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Interface" xmi:id="_service_AuthService" name="AuthService">
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_svc_login" name="login" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_svc_loginReq" name="request" type="_class_LoginRequest"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_svc_login" direction="return" type="_class_LoginResponse"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_svc_getCurrentUser" name="getCurrentUser" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_svc_sessionToken" name="sessionId" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_svc_getCurrentUser" direction="return" type="_class_UserInfoResponse"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_svc_logout" name="logout" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_svc_logoutSession" name="sessionId" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_svc_logout" direction="return" type="_type_void"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <packagedElement xmi:type="uml:Class" xmi:id="_service_AuthServiceImpl" name="AuthServiceImpl">
+      <interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_realize_AuthService"
+                            supplier="_service_AuthService" client="_service_AuthServiceImpl"
+                            contract="_service_AuthService"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_impl_userRepo" name="userAccountRepository" visibility="private" type="_repo_UserAccountRepository"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_impl_sessRepo" name="authSessionRepository" visibility="private" type="_repo_AuthSessionRepository"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_impl_login" name="login" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_impl_loginReq" name="request" type="_class_LoginRequest"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_impl_login" direction="return" type="_class_LoginResponse"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_impl_getCurrentUser" name="getCurrentUser" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_impl_token" name="sessionId" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_impl_getCurrentUser" direction="return" type="_class_UserInfoResponse"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_impl_logout" name="logout" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_impl_logoutToken" name="sessionId" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_impl_logout" direction="return" type="_type_void"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- CONTROLLER LAYER                           -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Class" xmi:id="_ctrl_AuthController" name="AuthController">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_attr_ctrl_authSvc" name="authService" visibility="private" type="_service_AuthService"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ctrl_login" name="login" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_ctrl_loginReq" name="request" type="_class_LoginRequest"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ctrl_login" direction="return" type="_type_response_entity"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ctrl_getCurrentUser" name="getCurrentUser" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_ctrl_authHeader" name="authorization" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ctrl_getCurrentUser" direction="return" type="_type_response_entity"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ctrl_logout" name="logout" visibility="public">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_ctrl_logoutHeader" name="authorization" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ctrl_logout" direction="return" type="_type_response_entity"/>
+      </ownedOperation>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_op_ctrl_extractToken" name="extractToken" visibility="private">
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_param_ctrl_authString" name="authorization" type="_type_string"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_ret_ctrl_extractToken" direction="return" type="_type_string"/>
+      </ownedOperation>
+    </packagedElement>
+
+    <!-- ========================================== -->
+    <!-- ASSOCIATIONS & DEPENDENCIES                -->
+    <!-- ========================================== -->
+    <!-- UserAccount (N) - Role (1) -->
+    <packagedElement xmi:type="uml:Association" xmi:id="_assoc_user_role" name="role">
+      <memberEnd xmi:idref="_end_user_role_source"/>
+      <memberEnd xmi:idref="_end_user_role_target"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_end_user_role_source" name="userAccounts" type="_entity_UserAccount" lower="0" upper="*"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_end_user_role_target" name="role" type="_entity_Role" lower="1" upper="1"/>
+    </packagedElement>
+
+    <!-- UserAccount (1) - AuthSession (N) -->
+    <packagedElement xmi:type="uml:Association" xmi:id="_assoc_user_sessions" name="has_sessions">
+      <memberEnd xmi:idref="_end_user_sessions_source"/>
+      <memberEnd xmi:idref="_end_user_sessions_target"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_end_user_sessions_source" name="userAccount" type="_entity_UserAccount" lower="1" upper="1"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_end_user_sessions_target" name="sessions" type="_entity_AuthSession" lower="0" upper="*"/>
+    </packagedElement>
+
+    <!-- AuthController -> AuthService (Usage Dependency) -->
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_dep_ctrl_svc" supplier="_service_AuthService" client="_ctrl_AuthController"/>
+
+    <!-- AuthServiceImpl -> Repositories (Usage Dependencies) -->
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_dep_impl_userRepo" supplier="_repo_UserAccountRepository" client="_service_AuthServiceImpl"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_dep_impl_sessRepo" supplier="_repo_AuthSessionRepository" client="_service_AuthServiceImpl"/>
+
+    <!-- ========================================== -->
+    <!-- SEQUENCE DIAGRAM (INTERACTION: Sign-In)   -->
+    <!-- ========================================== -->
+    <packagedElement xmi:type="uml:Interaction" xmi:id="_interaction_signIn" name="SignIn_Sequence">
+      <!-- Lifelines -->
+      <lifeline xmi:type="uml:Lifeline" xmi:id="_ll_actor" name="Actor"/>
+      <lifeline xmi:type="uml:Lifeline" xmi:id="_ll_loginPage" name="boundary:LoginPage"/>
+      <lifeline xmi:type="uml:Lifeline" xmi:id="_ll_authController" name="control:AuthController" represents="_attr_ctrl_authSvc"/>
+      <lifeline xmi:type="uml:Lifeline" xmi:id="_ll_authService" name="control:AuthService"/>
+      <lifeline xmi:type="uml:Lifeline" xmi:id="_ll_database" name="database:Database"/>
+
+      <!-- Messages -->
+      <message xmi:type="uml:Message" xmi:id="_msg_1" name="Enter username &amp; password" messageSort="asynchCall"
+               sendEvent="_occ_send_1" receiveEvent="_occ_recv_1"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_2" name="login(request)" messageSort="synchCall"
+               sendEvent="_occ_send_2" receiveEvent="_occ_recv_2"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_3" name="login(request)" messageSort="synchCall"
+               sendEvent="_occ_send_3" receiveEvent="_occ_recv_3"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_4" name="findForLogin(usernameOrEmail)" messageSort="synchCall"
+               sendEvent="_occ_send_4" receiveEvent="_occ_recv_4"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_5" name="return UserAccount &amp; Role" messageSort="reply"
+               sendEvent="_occ_send_5" receiveEvent="_occ_recv_5"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_6" name="save(new AuthSession)" messageSort="synchCall"
+               sendEvent="_occ_send_6" receiveEvent="_occ_recv_6"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_7" name="return LoginResponse(token, userInfo)" messageSort="reply"
+               sendEvent="_occ_send_7" receiveEvent="_occ_recv_7"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_8" name="200 OK (token, user)" messageSort="reply"
+               sendEvent="_occ_send_8" receiveEvent="_occ_recv_8"/>
+      <message xmi:type="uml:Message" xmi:id="_msg_9" name="Display Home &amp; Redirect by Role" messageSort="asynchCall"
+               sendEvent="_occ_send_9" receiveEvent="_occ_recv_9"/>
+    </packagedElement>
+  </uml:Model>
+</xmi:XMI>
+

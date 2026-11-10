@@ -1,4 +1,4 @@
-package com.example.swd.mapper;
+package com.example.swd.config;
 
 import com.example.swd.dto.response.WorkflowViews.DoctorView;
 import com.example.swd.dto.response.WorkflowViews.PatientView;

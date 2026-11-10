@@ -1,0 +1,225 @@
+@startuml AuthClass
+title Class Diagram: User Authentication & Registration (AuthClass)
+
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "Controller Layer" {
+    class AuthController <<control>> {
+        - authService: AuthService
+        + login(request: LoginRequest): ResponseEntity<LoginResponse>
+        + getCurrentUser(authorization: String): ResponseEntity<UserInfoResponse>
+        + logout(authorization: String): ResponseEntity<Map<String, Object>>
+        - extractToken(authorization: String): String
+    }
+
+    class PatientController <<control>> {
+        - registrationService: PatientRegistrationService
+        + register(command: RegisterCommand): ResponseEntity<RegisterResponse>
+        + verifyOtp(command: VerifyOtpCommand): ResponseEntity<AuthResponse>
+        + resendOtp(command: ResendOtpCommand): ResponseEntity<Map<String, Object>>
+    }
+}
+
+package "Service Layer" {
+    interface AuthService <<interface>> {
+        + login(request: LoginRequest): LoginResponse
+        + getCurrentUser(sessionId: String): UserInfoResponse
+        + authenticate(token: String): StaffPrincipal
+        + logout(sessionId: String): void
+    }
+
+    class AuthServiceImpl <<control>> {
+        - userAccountRepository: UserAccountRepository
+        - authSessionRepository: AuthSessionRepository
+        - hospitalStaffRepository: HospitalStaffRepository
+        - patientRepository: PatientRepository
+        - passwordEncoder: PasswordEncoder
+        + login(request: LoginRequest): LoginResponse
+        + getCurrentUser(sessionId: String): UserInfoResponse
+        + authenticate(token: String): StaffPrincipal
+        + logout(sessionId: String): void
+        - buildUserInfo(account: UserAccount): UserInfoResponse
+    }
+
+    interface PatientRegistrationService <<interface>> {
+        + registerPatient(command: RegisterCommand): RegisterResponse
+        + verifyRegistration(command: VerifyOtpCommand): AuthResponse
+        + resendOtp(email: String): void
+    }
+
+    class PatientRegistrationServiceImpl <<control>> {
+        - verificationRepository: RegistrationVerificationRepository
+        - userAccountRepository: UserAccountRepository
+        - patientRepository: PatientRepository
+        - roleRepository: RoleRepository
+        - emailService: RegistrationEmailService
+        - passwordEncoder: PasswordEncoder
+        + registerPatient(command: RegisterCommand): RegisterResponse
+        + verifyRegistration(command: VerifyOtpCommand): AuthResponse
+        + resendOtp(email: String): void
+    }
+
+    class RegistrationEmailService <<service>> {
+        - mailSender: JavaMailSender
+        + sendOtpEmail(toEmail: String, otpCode: String): void
+    }
+}
+
+package "Repository Layer" {
+    interface UserAccountRepository <<interface>> {
+        + findForLogin(login: String): Optional<UserAccount>
+        + findByUsername(username: String): Optional<UserAccount>
+        + findByLoginEmail(loginEmail: String): Optional<UserAccount>
+        + save(account: UserAccount): UserAccount
+    }
+
+    interface AuthSessionRepository <<interface>> {
+        + findForAuthentication(id: String): Optional<AuthSession>
+        + save(session: AuthSession): AuthSession
+    }
+
+    interface RoleRepository <<interface>> {
+        + findByRoleCode(roleCode: RoleCode): Optional<Role>
+    }
+
+    interface RegistrationVerificationRepository <<interface>> {
+        + findByEmailAndStatus(email: String, status: VerificationStatus): Optional<RegistrationVerification>
+        + save(verification: RegistrationVerification): RegistrationVerification
+    }
+}
+
+package "Domain Entities" {
+    enum RoleCode <<enumeration>> {
+        ADMIN
+        MANAGER
+        DOCTOR
+        MEDICAL_SERVICE_STAFF
+        RECEPTIONIST
+        PATIENT
+    }
+
+    enum ActiveStatus <<enumeration>> {
+        ACTIVE
+        INACTIVE
+    }
+
+    enum RevocationReason <<enumeration>> {
+        LOGOUT
+        ACCOUNT_DISABLED
+        PASSWORD_RESET
+    }
+
+    enum VerificationStatus <<enumeration>> {
+        PENDING
+        VERIFIED
+        EXPIRED
+    }
+
+    class Role <<entity>> {
+        - id: Short
+        - roleCode: RoleCode
+        - roleName: String
+    }
+
+    class UserAccount <<entity>> {
+        - id: Long
+        - role: Role
+        - username: String
+        - loginEmail: String
+        - passwordHash: String
+        - status: ActiveStatus
+        - passwordChangedAt: LocalDateTime
+    }
+
+    class AuthSession <<entity>> {
+        - id: String
+        - userAccount: UserAccount
+        - expiresAt: LocalDateTime
+        - revokedAt: LocalDateTime
+        - revocationReason: RevocationReason
+    }
+
+    class RegistrationVerification <<entity>> {
+        - id: Long
+        - email: String
+        - otpHash: String
+        - fullName: String
+        - phone: String
+        - dateOfBirth: LocalDate
+        - gender: Gender
+        - passwordHash: String
+        - expiresAt: LocalDateTime
+        - status: VerificationStatus
+    }
+
+    class Patient <<entity>> {
+        - id: Long
+        - userAccount: UserAccount
+        - patientCode: String
+        - fullName: String
+        - phone: String
+        - contactEmail: String
+        - dateOfBirth: LocalDate
+        - gender: Gender
+        - address: String
+    }
+}
+
+package "DTOs" {
+    class LoginRequest {
+        - username: String
+        - password: String
+    }
+
+    class LoginResponse {
+        - token: String
+        - user: UserInfoResponse
+    }
+
+    class UserInfoResponse {
+        - id: Long
+        - username: String
+        - email: String
+        - role: String
+        - fullName: String
+    }
+
+    class RegisterCommand {
+        - fullName: String
+        - email: String
+        - password: String
+        - phone: String
+        - dateOfBirth: LocalDate
+        - gender: Gender
+    }
+
+    class VerifyOtpCommand {
+        - email: String
+        - otpCode: String
+    }
+}
+
+' Relationships
+AuthController ..> AuthService : uses
+PatientController ..> PatientRegistrationService : uses
+
+AuthServiceImpl ..|> AuthService : implements
+PatientRegistrationServiceImpl ..|> PatientRegistrationService : implements
+PatientRegistrationServiceImpl ..> RegistrationEmailService : uses
+
+AuthServiceImpl ..> UserAccountRepository : uses
+AuthServiceImpl ..> AuthSessionRepository : uses
+PatientRegistrationServiceImpl ..> RegistrationVerificationRepository : uses
+PatientRegistrationServiceImpl ..> UserAccountRepository : uses
+PatientRegistrationServiceImpl ..> PatientRepository : uses
+
+UserAccount "0..*" --> "1" Role : role
+AuthSession "0..*" --> "1" UserAccount : userAccount
+Patient "0..1" --> "0..1" UserAccount : userAccount
+
+@enduml
+

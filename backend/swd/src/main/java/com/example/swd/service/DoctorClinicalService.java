@@ -3,7 +3,7 @@ package com.example.swd.service;
 import com.example.swd.dto.request.ClinicalCommands.*;
 import com.example.swd.dto.response.ClinicalViews.*;
 import com.example.swd.dto.response.WorkflowViews.PageView;
-import com.example.swd.integration.ClinicalAttachmentStorage;
+import com.example.swd.config.ClinicalAttachmentStorage;
 import com.example.swd.security.StaffPrincipal;
 import java.time.LocalDate;
 import java.util.List;

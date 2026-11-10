@@ -1,10 +1,6 @@
 package com.example.swd.service.impl;
-import com.example.swd.integration.RegistrationEmailService;
-import com.example.swd.mapper.WorkflowMapper;
-import com.example.swd.service.PatientRegistrationService;
-import com.example.swd.service.PatientRegistrationService.OtpView;
-import com.example.swd.service.PatientRegistrationService.VerifiedView;
-import com.example.swd.service.PatientRegistrationService.CompletedProfileView;
+import com.example.swd.config.RegistrationEmailService;
+import com.example.swd.config.WorkflowMapper;
 
 import com.example.swd.dto.request.RegistrationCommands;
 import com.example.swd.entity.common.enums.ActiveStatus;

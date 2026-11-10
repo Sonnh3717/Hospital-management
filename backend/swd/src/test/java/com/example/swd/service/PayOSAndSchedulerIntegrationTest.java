@@ -1,5 +1,5 @@
 package com.example.swd.service;
-import com.example.swd.integration.PayOSService;
+import com.example.swd.config.PayOSService;
 
 import com.example.swd.entity.appointment.Appointment;
 import com.example.swd.entity.appointment.AppointmentRule;
@@ -20,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;

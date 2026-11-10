@@ -1,0 +1,130 @@
+title Sequence Diagram: Doctor Consultation & Complete Encounter (Complete Encounter)
+
+autonumber
+
+actor "Doctor" as Doctor
+participant "DoctorEncounterWorkspace" as DoctorEncounterWorkspace <<boundary>>
+participant "DoctorClinicalController" as DoctorClinicalController <<control>>
+participant "DoctorClinicalServiceImpl" as DoctorClinicalServiceImpl <<control>>
+participant "ClinicalMapper" as ClinicalMapper <<control>>
+participant "EncounterRepository" as EncounterRepository <<database>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+
+== Phase 1: Start Consultation Session ==
+Doctor->DoctorEncounterWorkspace: select waiting patient from worklist
+activate DoctorEncounterWorkspace
+
+Doctor->DoctorEncounterWorkspace: click "Start Consultation" button
+
+DoctorEncounterWorkspace->DoctorClinicalController: startEncounter(appointmentId)
+activate DoctorClinicalController
+
+DoctorClinicalController->DoctorClinicalServiceImpl: startEncounter(appointmentId, doctorId)
+activate DoctorClinicalServiceImpl
+
+DoctorClinicalServiceImpl->EncounterRepository: findOrCreateEncounter(appointmentId, doctorId, status: IN_PROGRESS)
+activate EncounterRepository
+EncounterRepository-->DoctorClinicalServiceImpl: return encounterEntity (status: IN_PROGRESS)
+deactivate EncounterRepository
+
+DoctorClinicalServiceImpl-->DoctorClinicalController: return startView(encounterId)
+deactivate DoctorClinicalServiceImpl
+
+DoctorClinicalController-->DoctorEncounterWorkspace: return startSuccess(encounterId)
+deactivate DoctorClinicalController
+
+DoctorEncounterWorkspace-->Doctor: display electronic medical record (EMR)
+
+== Phase 2: Clinical Examination, Investigation & Treatment Planning ==
+Doctor->DoctorEncounterWorkspace: enter chief complaint, symptoms, clinical findings and ICD-10 diagnoses
+Doctor->DoctorEncounterWorkspace: click "Save Examination" button
+
+DoctorEncounterWorkspace->DoctorClinicalController: saveExamination(encounterId, examinationData)
+activate DoctorClinicalController
+
+DoctorClinicalController->DoctorClinicalServiceImpl: saveExamination(encounterId, examinationData)
+activate DoctorClinicalServiceImpl
+
+DoctorClinicalServiceImpl->EncounterRepository: saveExaminationAndDiagnoses(encounterId, examinationData)
+DoctorClinicalServiceImpl-->DoctorClinicalController: return encounterView
+deactivate DoctorClinicalServiceImpl
+
+DoctorClinicalController-->DoctorEncounterWorkspace: return saveSuccess()
+deactivate DoctorClinicalController
+
+opt Doctor orders medical service / diagnostic investigations
+    Doctor->DoctorEncounterWorkspace: select service and enter investigation notes
+    Doctor->DoctorEncounterWorkspace: click "Order Investigation" button
+    DoctorEncounterWorkspace->DoctorClinicalController: createServiceRequest(encounterId, requestData)
+    activate DoctorClinicalController
+    DoctorClinicalController->DoctorClinicalServiceImpl: createServiceRequest(encounterId, requestData)
+    deactivate DoctorClinicalController
+    note over DoctorClinicalServiceImpl: Paraclinical technician uploads investigation results & attachment
+    Doctor->DoctorEncounterWorkspace: review investigation result and enter handling decision
+    Doctor->DoctorEncounterWorkspace: click "Save Review" button
+    DoctorEncounterWorkspace->DoctorClinicalController: reviewServiceResult(resultId, reviewData)
+    activate DoctorClinicalController
+    DoctorClinicalController->DoctorClinicalServiceImpl: reviewServiceResult(resultId, reviewData)
+    deactivate DoctorClinicalController
+end
+
+Doctor->DoctorEncounterWorkspace: enter treatment decision, prescription instructions and follow-up date
+Doctor->DoctorEncounterWorkspace: click "Save Treatment Plan" button
+
+DoctorEncounterWorkspace->DoctorClinicalController: saveTreatment(encounterId, treatmentData)
+activate DoctorClinicalController
+
+DoctorClinicalController->DoctorClinicalServiceImpl: saveTreatment(encounterId, treatmentData)
+activate DoctorClinicalServiceImpl
+
+DoctorClinicalServiceImpl->EncounterRepository: saveTreatmentPlan(encounterId, treatmentData)
+DoctorClinicalServiceImpl-->DoctorClinicalController: return encounterView
+deactivate DoctorClinicalServiceImpl
+
+DoctorClinicalController-->DoctorEncounterWorkspace: return saveSuccess()
+deactivate DoctorClinicalController
+
+== Phase 3: Complete Encounter Validation & Finalization ==
+Doctor->DoctorEncounterWorkspace: click "Complete Encounter" button
+
+DoctorEncounterWorkspace->DoctorClinicalController: completeEncounter(encounterId)
+activate DoctorClinicalController
+
+DoctorClinicalController->DoctorClinicalServiceImpl: completeEncounter(encounterId, doctorId)
+activate DoctorClinicalServiceImpl
+
+DoctorClinicalServiceImpl->EncounterRepository: lockEncounterById(encounterId)
+activate EncounterRepository
+EncounterRepository-->DoctorClinicalServiceImpl: return encounterEntity
+deactivate EncounterRepository
+
+DoctorClinicalServiceImpl->ClinicalMapper: checkBlockers(encounterEntity)
+activate ClinicalMapper
+ClinicalMapper->ClinicalMapper: validateCompletionPrerequisites():\n1. Chief complaint, symptoms, clinical findings saved?\n2. At least one ICD-10 diagnosis recorded?\n3. Treatment decision saved?\n4. All service requests completed & reviewed?
+ClinicalMapper-->DoctorClinicalServiceImpl: return blockerList
+deactivate ClinicalMapper
+
+alt Missing required clinical sections (blockers not empty)
+    DoctorClinicalServiceImpl-->DoctorClinicalController: throw CompletionBlockedException(blockerList)
+    DoctorClinicalController-->DoctorEncounterWorkspace: return completionBlocked(blockerList)
+    DoctorEncounterWorkspace-->Doctor: display warning modal with list of missing items to complete
+else All clinical prerequisites satisfied
+    DoctorClinicalServiceImpl->EncounterRepository: updateStatus(COMPLETED, completedTime)
+    activate EncounterRepository
+    EncounterRepository-->DoctorClinicalServiceImpl: return updatedEncounter (status: COMPLETED)
+    deactivate EncounterRepository
+
+    DoctorClinicalServiceImpl->AppointmentRepository: updateAppointmentStatus(appointmentId, COMPLETED)
+    activate AppointmentRepository
+    AppointmentRepository-->DoctorClinicalServiceImpl: return updatedAppointment (status: COMPLETED)
+    deactivate AppointmentRepository
+
+    DoctorClinicalServiceImpl-->DoctorClinicalController: return encounterView (status: COMPLETED)
+    deactivate DoctorClinicalServiceImpl
+
+    DoctorClinicalController-->DoctorEncounterWorkspace: return completionSuccess(encounterView)
+    deactivate DoctorClinicalController
+
+    DoctorEncounterWorkspace-->Doctor: lock EMR to read-only mode and print prescription summary
+    deactivate DoctorEncounterWorkspace
+end

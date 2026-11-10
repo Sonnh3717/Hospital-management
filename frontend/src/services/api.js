@@ -145,6 +145,10 @@ export const appointmentApi = {
     });
     return response.data;
   },
+  scanNoShow: async () => {
+    const response = await api.post('/appointments/scan-no-show');
+    return response.data;
+  },
 };
 
 // ==================== RECEPTIONIST API ====================

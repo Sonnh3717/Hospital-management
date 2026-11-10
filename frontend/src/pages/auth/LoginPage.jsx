@@ -240,39 +240,6 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Quick Demo Helper for Showcase / Grading */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Tài khoản kiểm thử nhanh (Demo)
-              </span>
-              <SparklesIcon className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoFill('patient', 'Password123!')}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition-colors"
-              >
-                Bệnh nhân
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoFill('receptionist', 'Password123!')}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-              >
-                Lễ tân
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoFill('doctor', 'Password123!')}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors"
-              >
-                Bác sĩ
-              </button>
-            </div>
-          </div>
-
           {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600">

@@ -1,6 +1,5 @@
 package com.example.swd.config;
 
-import com.example.swd.integration.ClinicalAttachmentStorage;
 import jakarta.servlet.MultipartConfigElement;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

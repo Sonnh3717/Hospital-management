@@ -1,7 +1,7 @@
 package com.example.swd.service.impl;
-import com.example.swd.integration.ClinicalAttachmentStorage;
-import com.example.swd.mapper.ClinicalMapper;
-import com.example.swd.service.DoctorClinicalService;
+import com.example.swd.config.ClinicalAttachmentStorage;
+import com.example.swd.config.ClinicalMapper;
+
 import static com.example.swd.service.impl.ClinicalWorkflowSupport.forbidden;
 import static com.example.swd.service.impl.ClinicalWorkflowSupport.priority;
 
@@ -9,7 +9,6 @@ import com.example.swd.dto.request.ClinicalCommands.*;
 import com.example.swd.dto.response.ClinicalViews.*;
 import com.example.swd.dto.response.WorkflowViews.PageView;
 import com.example.swd.entity.appointment.Appointment;
-import com.example.swd.entity.common.enums.Priority;
 import com.example.swd.entity.encounter.*;
 import com.example.swd.entity.medicalservice.*;
 import com.example.swd.entity.scheduling.WorkSchedule;

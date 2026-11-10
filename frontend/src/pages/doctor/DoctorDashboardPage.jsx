@@ -39,6 +39,48 @@ const DERM_ICD10_PRESETS = [
 export default function DoctorDashboardPage() {
   const { user } = useAuth();
 
+  // Helper: Normalize UTC ISO string from backend & convert to local browser time (UTC+7)
+  const parseUtcDate = (isoString) => {
+    if (!isoString) return null;
+    let s = String(isoString);
+    if (!s.endsWith('Z') && !s.includes('+') && s.includes('T')) {
+      s += 'Z';
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const formatTimeOnly = (isoString) => {
+    if (!isoString) return '--';
+    const d = parseUtcDate(isoString);
+    if (!d) return isoString;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${mins}`;
+  };
+
+  const formatDateOnly = (isoString) => {
+    if (!isoString) return '--';
+    const d = parseUtcDate(isoString);
+    if (!d) return isoString;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return '--';
+    const d = parseUtcDate(isoString);
+    if (!d) return isoString;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${mins} - ${day}/${month}/${year}`;
+  };
+
   // Worklist filter state
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -573,7 +615,7 @@ export default function DoctorDashboardPage() {
                 {isEncounterCompleted ? (
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
                     <CheckCircleIcon className="w-4 h-4" />
-                    <span>Lượt khám đã hoàn tất lúc {activeEncounter.completedAt || ''}</span>
+                    <span>Lượt khám đã hoàn tất lúc {formatDateTime(activeEncounter.completedAt)}</span>
                   </div>
                 ) : (
                   <button
@@ -1021,7 +1063,7 @@ export default function DoctorDashboardPage() {
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                                   <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
-                                  <span>Kết quả cận lâm sàng (Đã ghi nhận lúc {result.finalizedAt}):</span>
+                                  <span>Kết quả cận lâm sàng (Đã ghi nhận lúc {formatDateTime(result.finalizedAt)}):</span>
                                 </span>
                                 {result.attachmentUrl && (
                                   <a
@@ -1224,7 +1266,7 @@ export default function DoctorDashboardPage() {
                     <div key={hist.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs text-slate-800">
-                          Đợt khám ngày {hist.startedAt || 'N/A'} - Bác sĩ phụ trách: {hist.doctor?.fullName}
+                          Đợt khám ngày {formatDateTime(hist.startedAt)} - Bác sĩ phụ trách: {hist.doctor?.fullName}
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                           {hist.status}
@@ -1424,12 +1466,11 @@ export default function DoctorDashboardPage() {
                           </td>
                           <td className="py-3 px-4">
                             <span className="font-semibold text-slate-700">
-                              {item.slot?.startsAt?.split('T')[1]?.substring(0, 5) || ''} -{' '}
-                              {item.slot?.endsAt?.split('T')[1]?.substring(0, 5) || ''}
+                              {formatTimeOnly(item.slot?.startsAt)} - {formatTimeOnly(item.slot?.endsAt)}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-slate-500">
-                            {item.checkedInAt ? item.checkedInAt.split('T')[1]?.substring(0, 5) : '—'}
+                            {item.checkedInAt ? formatTimeOnly(item.checkedInAt) : '—'}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {isWaiting && (

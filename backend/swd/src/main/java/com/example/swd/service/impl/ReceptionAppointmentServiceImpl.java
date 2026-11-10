@@ -1,5 +1,5 @@
 package com.example.swd.service.impl;
-import com.example.swd.mapper.WorkflowMapper;
+import com.example.swd.config.WorkflowMapper;
 
 import com.example.swd.dto.request.ReceptionRequests.CreateAppointment;
 import com.example.swd.dto.request.ReceptionRequests.NewPatient;

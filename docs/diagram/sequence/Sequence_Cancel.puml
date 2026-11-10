@@ -1,0 +1,75 @@
+@startuml Sequence_Cancel
+title Sequence Diagram: Appointment Cancellation (Cancel)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "User" as User
+participant "AppointmentManagementPage" as AppointmentManagementPage <<boundary>>
+participant "AppointmentController" as AppointmentController <<control>>
+participant "AppointmentServiceImpl" as AppointmentServiceImpl <<control>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+participant "EncounterRepository" as EncounterRepository <<database>>
+
+User -> AppointmentManagementPage: select appointment and click "Cancel"
+activate AppointmentManagementPage
+
+User -> AppointmentManagementPage: enter cancellation reason
+User -> AppointmentManagementPage: click "Confirm Cancellation" button
+
+AppointmentManagementPage -> AppointmentController: cancelAppointment(appointmentId, reason)
+activate AppointmentController
+
+AppointmentController -> AppointmentServiceImpl: cancelAppointment(appointmentId, reason, accountId)
+activate AppointmentServiceImpl
+
+AppointmentServiceImpl -> AppointmentRepository: lockAppointmentById(appointmentId)
+activate AppointmentRepository
+AppointmentRepository --> AppointmentServiceImpl: return appointmentEntity
+deactivate AppointmentRepository
+
+alt Doctor has already started consultation
+    AppointmentServiceImpl -> EncounterRepository: findByAppointmentId(appointmentId)
+    activate EncounterRepository
+    EncounterRepository --> AppointmentServiceImpl: return encounterEntity
+    deactivate EncounterRepository
+    AppointmentServiceImpl --> AppointmentController: throw CannotCancelException()
+    AppointmentController --> AppointmentManagementPage: return errorResponse("Cannot cancel: consultation in progress")
+    AppointmentManagementPage --> User: display error message("Doctor has already started the consultation")
+else Appointment is already concluded or cancelled
+    AppointmentServiceImpl --> AppointmentController: throw InvalidAppointmentStateException()
+    AppointmentController --> AppointmentManagementPage: return errorResponse("Appointment cannot be cancelled")
+    AppointmentManagementPage --> User: display error message("Appointment is not eligible for cancellation")
+else Cancellation successful
+    AppointmentServiceImpl -> AppointmentRepository: updateStatus(CANCELLED, cancellationReason, cancelledTime, accountId)
+    activate AppointmentRepository
+    AppointmentRepository --> AppointmentServiceImpl: return updatedAppointment
+    deactivate AppointmentRepository
+
+    AppointmentServiceImpl --> AppointmentController: return appointmentResponse(appointment)
+    deactivate AppointmentServiceImpl
+
+    AppointmentController --> AppointmentManagementPage: return cancellationSuccess(appointmentResponse)
+    deactivate AppointmentController
+
+    AppointmentManagementPage --> User: display success notification ("Appointment cancelled successfully")\n(Slot capacity is released for other patients)
+    deactivate AppointmentManagementPage
+end
+
+@enduml

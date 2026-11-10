@@ -1,0 +1,80 @@
+@startuml Sequence_UndoCheckIn
+title Sequence Diagram: Undo Patient Check-in (Undo Check-in)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "Receptionist" as Receptionist
+participant "ReceptionAppointmentPage" as ReceptionAppointmentPage <<boundary>>
+participant "ReceptionAppointmentController" as ReceptionAppointmentController <<control>>
+participant "ReceptionAppointmentServiceImpl" as ReceptionAppointmentServiceImpl <<control>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+participant "EncounterRepository" as EncounterRepository <<database>>
+participant "HospitalStaffRepository" as HospitalStaffRepository <<database>>
+
+Receptionist -> ReceptionAppointmentPage: select checked-in appointment
+activate ReceptionAppointmentPage
+
+Receptionist -> ReceptionAppointmentPage: click "Undo Check-in" button
+
+ReceptionAppointmentPage -> ReceptionAppointmentController: undoCheckIn(appointmentId)
+activate ReceptionAppointmentController
+
+ReceptionAppointmentController -> ReceptionAppointmentServiceImpl: undoCheckIn(appointmentId, receptionistId)
+activate ReceptionAppointmentServiceImpl
+
+ReceptionAppointmentServiceImpl -> AppointmentRepository: lockAppointmentById(appointmentId)
+activate AppointmentRepository
+AppointmentRepository --> ReceptionAppointmentServiceImpl: return appointmentEntity (status: CHECKED_IN)
+deactivate AppointmentRepository
+
+alt Doctor has already started consultation
+    ReceptionAppointmentServiceImpl -> EncounterRepository: findByAppointmentId(appointmentId)
+    activate EncounterRepository
+    EncounterRepository --> ReceptionAppointmentServiceImpl: return encounterEntity
+    deactivate EncounterRepository
+    ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: throw EncounterAlreadyStartedException()
+    ReceptionAppointmentController --> ReceptionAppointmentPage: return errorResponse("Cannot undo: consultation in progress")
+    ReceptionAppointmentPage --> Receptionist: display error message("Doctor has already started consultation")
+else Appointment is not in CHECKED_IN status
+    ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: throw InvalidAppointmentStateException()
+    ReceptionAppointmentController --> ReceptionAppointmentPage: return errorResponse("Appointment is not currently checked-in")
+    ReceptionAppointmentPage --> Receptionist: display error message("Invalid status for undo check-in")
+else Undo check-in successful
+    ReceptionAppointmentServiceImpl -> HospitalStaffRepository: getStaffReference(receptionistId)
+    activate HospitalStaffRepository
+    HospitalStaffRepository --> ReceptionAppointmentServiceImpl: return staffEntity
+    deactivate HospitalStaffRepository
+
+    ReceptionAppointmentServiceImpl -> AppointmentRepository: revertCheckIn(BOOKED, staffEntity, reversalTime)
+    activate AppointmentRepository
+    AppointmentRepository --> ReceptionAppointmentServiceImpl: return updatedAppointment
+    deactivate AppointmentRepository
+
+    ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: return appointmentView
+    deactivate ReceptionAppointmentServiceImpl
+
+    ReceptionAppointmentController --> ReceptionAppointmentPage: return undoCheckInSuccess(appointmentView)
+    deactivate ReceptionAppointmentController
+
+    ReceptionAppointmentPage --> Receptionist: display status "Booked" (patient removed from Doctor Waiting List)
+    deactivate ReceptionAppointmentPage
+end
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml Login_Sequence_Diagram
+title Sequence Diagram: Đăng nhập hệ thống (Sign-in) - Trích xuất từ mã nguồn thực tế
+
+autonumber
+actor "Người dùng" as User
+boundary "Giao diện Đăng nhập\n(LoginPage)" as UI
+control "AuthController" as Controller
+control "AuthServiceImpl" as Service
+database "UserAccountRepository" as UserRepo
+database "AuthSessionRepository" as SessionRepo
+
+User -> UI: Nhập tên đăng nhập (Username/Email) và mật khẩu
+activate UI
+
+UI -> Controller: POST /api/auth/login\n(LoginRequest: username, password)
+activate Controller
+
+Controller -> Service: login(LoginRequest)
+activate Service
+
+Service -> UserRepo: findForLogin(usernameOrEmail)
+activate UserRepo
+UserRepo --> Service: Optional<UserAccount>
+deactivate UserRepo
+
+alt #Pink Tài khoản không tồn tại hoặc sai mật khẩu
+    Service --> Controller: throw WorkflowException\n(401 UNAUTHORIZED: AUTH_INVALID_CREDENTIALS)
+    Controller --> UI: 401 Unauthorized\n"Tên đăng nhập hoặc mật khẩu không chính xác"
+    UI --> User: Hiển thị thông báo lỗi đăng nhập
+else #LightYellow Tài khoản bị khóa (status != ACTIVE)
+    Service --> Controller: throw WorkflowException\n(403 FORBIDDEN: AUTH_ACCOUNT_INACTIVE)
+    Controller --> UI: 403 Forbidden\n"Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt"
+    UI --> User: Hiển thị cảnh báo tài khoản bị vô hiệu hóa
+else #LightCyan Đăng nhập thành công
+    Service -> SessionRepo: save(new AuthSession: sessionId, account, expiresAt)
+    activate SessionRepo
+    SessionRepo --> Service: AuthSession saved
+    deactivate SessionRepo
+
+    Service --> Controller: LoginResponse(token = sessionId, user = UserInfoResponse)
+    deactivate Service
+
+    Controller --> UI: 200 OK (token, user profile & role)
+    deactivate Controller
+
+    UI --> User: Chuyển hướng về trang chủ theo vai trò (Doctor / Receptionist / Patient / Admin)
+    deactivate UI
+end
+
+@enduml
+

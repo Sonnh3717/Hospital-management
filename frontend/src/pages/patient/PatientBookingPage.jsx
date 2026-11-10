@@ -22,6 +22,8 @@ export const HOSPITAL_SHIFTS = [
     code: 'SHIFT-EARLY',
     name: 'Ca Sáng Sớm',
     time: '06:00 - 07:30',
+    startTime: '06:00',
+    endTime: '07:30',
     display: 'Ca Sáng Sớm (06:00 - 07:30)',
   },
   {
@@ -29,6 +31,8 @@ export const HOSPITAL_SHIFTS = [
     code: 'SHIFT-MORNING',
     name: 'Ca Sáng',
     time: '07:30 - 12:00',
+    startTime: '07:30',
+    endTime: '12:00',
     display: 'Ca Sáng (07:30 - 12:00)',
   },
   {
@@ -36,9 +40,38 @@ export const HOSPITAL_SHIFTS = [
     code: 'SHIFT-AFTERNOON',
     name: 'Ca Chiều',
     time: '13:00 - 17:00',
+    startTime: '13:00',
+    endTime: '17:00',
     display: 'Ca Chiều (13:00 - 17:00)',
   },
 ];
+
+/**
+ * Kiểm tra xem một ca khám vào một ngày cụ thể đã trôi qua so với thời gian hiện tại chưa.
+ * - Nếu ngày được chọn là ngày trong quá khứ (< hôm nay): Đã qua.
+ * - Nếu ngày được chọn là ngày trong tương lai (> hôm nay): Chưa qua.
+ * - Nếu ngày được chọn là HÔM NAY: So sánh giờ hiện tại với giờ kết thúc ca (endTime).
+ *   Ví dụ: Nếu hiện tại sau 07:30, Ca Sáng Sớm (06:00 - 07:30) kết thúc lúc 07:30 nên đã trôi qua.
+ */
+export const isShiftPassed = (dateStr, shift) => {
+  if (!dateStr || !shift || !shift.endTime) return false;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const todayIso = `${year}-${month}-${day}`;
+
+  if (dateStr < todayIso) return true;
+  if (dateStr > todayIso) return false;
+
+  // Nếu là ngày hôm nay: so sánh với thời điểm kết thúc ca khám
+  const [endHour, endMinute] = shift.endTime.split(':').map(Number);
+  const shiftEndTime = new Date(now);
+  shiftEndTime.setHours(endHour, endMinute, 0, 0);
+
+  return now >= shiftEndTime;
+};
 
 export default function PatientBookingPage() {
   const navigate = useNavigate();
@@ -80,12 +113,41 @@ export default function PatientBookingPage() {
     return list;
   }, []);
 
-  const [selectedDate, setSelectedDate] = useState(next7Days[0]?.iso || '');
-  const [selectedShiftCode, setSelectedShiftCode] = useState('SHIFT-MORNING');
+  // Tự động chọn ngày đầu tiên còn ca khám hợp lệ (nếu hôm nay đã hết tất cả ca thì tự động chọn ngày mai)
+  const initialDate = useMemo(() => {
+    if (!next7Days || next7Days.length === 0) return '';
+    const todayIso = next7Days[0].iso;
+    const allTodayPassed = HOSPITAL_SHIFTS.every((s) => isShiftPassed(todayIso, s));
+    if (allTodayPassed && next7Days.length > 1) {
+      return next7Days[1].iso;
+    }
+    return todayIso;
+  }, [next7Days]);
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedShiftCode, setSelectedShiftCode] = useState(() => {
+    const firstValid = HOSPITAL_SHIFTS.find((s) => !isShiftPassed(initialDate, s));
+    return firstValid ? firstValid.id : 'SHIFT-MORNING';
+  });
   const selectedShiftObj = useMemo(() => {
-    return HOSPITAL_SHIFTS.find((s) => s.id === selectedShiftCode) || HOSPITAL_SHIFTS[1];
+    return HOSPITAL_SHIFTS.find((s) => s.id === selectedShiftCode) || null;
   }, [selectedShiftCode]);
-  const selectedShift = selectedShiftObj.display;
+  const selectedShift = selectedShiftObj ? selectedShiftObj.display : 'Chưa chọn ca khám';
+
+  // Khi người dùng đổi ngày khám: tự động chuyển sang ca khám hợp lệ đầu tiên nếu ca đang chọn đã trôi qua
+  useEffect(() => {
+    const currentShift = HOSPITAL_SHIFTS.find((s) => s.id === selectedShiftCode);
+    if (!currentShift || isShiftPassed(selectedDate, currentShift)) {
+      const firstValid = HOSPITAL_SHIFTS.find((s) => !isShiftPassed(selectedDate, s));
+      if (firstValid) {
+        setSelectedShiftCode(firstValid.id);
+        setSelectedDoctorId('');
+      } else {
+        setSelectedShiftCode('');
+        setSelectedDoctorId('');
+      }
+    }
+  }, [selectedDate]);
 
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
@@ -226,7 +288,14 @@ export default function PatientBookingPage() {
 
   // Slots matching the chosen shift
   const shiftSlots = useMemo(() => {
+    if (!selectedShiftCode || (selectedShiftObj && isShiftPassed(selectedDate, selectedShiftObj))) {
+      return [];
+    }
+    const now = new Date();
     return availableSlots.filter((slot) => {
+      if (slot.endsAt && new Date(slot.endsAt) <= now) {
+        return false;
+      }
       if (slot.shiftCode) {
         if (slot.shiftCode.includes('EARLY')) return selectedShiftCode === 'SHIFT-EARLY';
         if (slot.shiftCode.includes('AFTERNOON') || slot.shiftCode.includes('EVENING')) return selectedShiftCode === 'SHIFT-AFTERNOON';
@@ -239,10 +308,13 @@ export default function PatientBookingPage() {
       if (hours < 12.5) return selectedShiftCode === 'SHIFT-MORNING';
       return selectedShiftCode === 'SHIFT-AFTERNOON';
     });
-  }, [availableSlots, selectedShiftCode]);
+  }, [availableSlots, selectedShiftCode, selectedShiftObj, selectedDate]);
 
   // Extract doctors on duty in THIS specific shift / date
   const doctorsInShift = useMemo(() => {
+    if (!selectedShiftCode || (selectedShiftObj && isShiftPassed(selectedDate, selectedShiftObj))) {
+      return [];
+    }
     const doctorMap = new Map();
 
     if (Array.isArray(shiftSlots) && shiftSlots.length > 0) {
@@ -273,7 +345,7 @@ export default function PatientBookingPage() {
     }
 
     return Array.from(doctorMap.values());
-  }, [shiftSlots, selectedShiftCode]);
+  }, [shiftSlots, selectedShiftCode, selectedShiftObj, selectedDate]);
 
   // Synchronize slot ID & doctor name whenever shift, doctor or slots change
   useEffect(() => {
@@ -295,6 +367,10 @@ export default function PatientBookingPage() {
 
   // Select shift handler: switch shift and reset doctor to default
   const handleShiftSelect = (shiftId) => {
+    const targetShift = HOSPITAL_SHIFTS.find((s) => s.id === shiftId);
+    if (isShiftPassed(selectedDate, targetShift)) {
+      return; // Không cho phép chọn ca khám đã trôi qua
+    }
     setSelectedShiftCode(shiftId);
     setSelectedDoctorId('');
   };
@@ -322,7 +398,7 @@ export default function PatientBookingPage() {
     setBookingFor(type);
     if (type === 'self') {
       // Fill current logged-in patient or demo default patient info
-      setFullName((user?.fullName || 'NGUYỄN HOÀNG YẾN').toUpperCase());
+      setFullName((user?.fullName).toUpperCase());
       setGender(user?.gender || 'FEMALE');
       setDateOfBirth('1995-10-20');
       setEthnicity('Kinh');
@@ -354,6 +430,10 @@ export default function PatientBookingPage() {
 
   // Handle Proceed to Step 2
   const handleProceedToStep2 = () => {
+    if (!selectedShiftCode || (selectedShiftObj && isShiftPassed(selectedDate, selectedShiftObj))) {
+      setFormError('Ca khám bạn chọn đã kết thúc thời gian tiếp nhận hoặc chưa được chọn. Vui lòng chọn ca khám hợp lệ.');
+      return;
+    }
     if (!reason.trim()) {
       setFormError('Vui lòng nhập lý do khám hoặc triệu chứng ban đầu của bạn.');
       return;
@@ -687,25 +767,34 @@ export default function PatientBookingPage() {
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                   {next7Days.map((item) => {
                     const isSelected = selectedDate === item.iso;
+                    const isAllPassed = HOSPITAL_SHIFTS.every((s) => isShiftPassed(item.iso, s));
+
                     return (
                       <button
                         key={item.iso}
                         type="button"
                         onClick={() => setSelectedDate(item.iso)}
-                        className={`p-2 rounded-lg text-center transition flex flex-col items-center justify-center ${
+                        className={`p-2 rounded-lg text-center transition flex flex-col items-center justify-center relative ${
                           isSelected
                             ? 'bg-[#1a4f8b] text-white shadow-sm ring-2 ring-[#1a4f8b]/30'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                            : isAllPassed
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300'
                         }`}
                       >
                         <span className="text-xs font-extrabold">{item.labelDate}</span>
                         <span
                           className={`text-[9px] mt-0.5 whitespace-nowrap ${
-                            isSelected ? 'text-sky-100' : 'text-slate-500'
+                            isSelected ? 'text-sky-100' : isAllPassed ? 'text-slate-400' : 'text-slate-500'
                           }`}
                         >
                           {item.labelDay}
                         </span>
+                        {isAllPassed && (
+                          <span className="text-[8px] text-amber-600 font-bold leading-tight">
+                            Hết ca
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -714,42 +803,73 @@ export default function PatientBookingPage() {
 
               {/* Khi bấm chọn ngày : Chọn Ca khám (3 ca duy nhất) */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
-                  3. Chọn ca khám ngày {selectedDateObject?.displayDate} <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    3. Chọn ca khám ngày {selectedDateObject?.displayDate} <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 italic">3 ca tiếp nhận tiêu chuẩn</span>
+                </div>
+
                 <div className="grid grid-cols-3 gap-2">
                   {HOSPITAL_SHIFTS.map((shift) => {
-                    const isSelected = selectedShiftCode === shift.id;
+                    const isPassed = isShiftPassed(selectedDate, shift);
+                    const isSelected = selectedShiftCode === shift.id && !isPassed;
+
                     return (
                       <button
                         key={shift.id}
                         type="button"
+                        disabled={isPassed}
                         onClick={() => handleShiftSelect(shift.id)}
-                        className={`p-2.5 rounded-lg text-center transition flex flex-col items-center justify-center ${
-                          isSelected
+                        title={isPassed ? `${shift.name} đã kết thúc thời gian tiếp nhận` : shift.name}
+                        className={`p-2.5 rounded-lg text-center transition flex flex-col items-center justify-center relative ${
+                          isPassed
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                            : isSelected
                             ? 'bg-[#0284c7] text-white shadow-sm ring-2 ring-sky-300'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-sky-300'
                         }`}
                       >
-                        <span className="text-xs font-bold">{shift.name}</span>
+                        <span className={`text-xs font-bold ${isPassed ? 'line-through text-slate-400' : ''}`}>
+                          {shift.name}
+                        </span>
                         <span
                           className={`text-[10px] mt-0.5 ${
-                            isSelected ? 'text-sky-100' : 'text-slate-500'
+                            isPassed
+                              ? 'text-slate-400'
+                              : isSelected
+                              ? 'text-sky-100'
+                              : 'text-slate-500'
                           }`}
                         >
                           {shift.time}
                         </span>
+                        {isPassed && (
+                          <span className="text-[9px] font-semibold text-rose-500 mt-0.5">
+                            (Đã qua giờ)
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Cảnh báo nếu toàn bộ ca khám trong ngày đã qua giờ */}
+                {HOSPITAL_SHIFTS.every((s) => isShiftPassed(selectedDate, s)) && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex items-center gap-2">
+                    <AlertCircleIcon className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      Các ca khám ngày <strong>{selectedDateObject?.displayDate}</strong> đã kết thúc thời gian tiếp nhận. Vui lòng chọn ngày khám tiếp theo để đặt lịch.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 4. Sau đó mới xuất hiện danh sách bác sĩ làm việc trong ca đó */}
               <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    4. Bác sĩ làm việc trong ca {selectedShiftObj.name}
+                    4. Bác sĩ làm việc trong ca {selectedShiftObj?.name || '---'}
                   </label>
                   <span className="text-[11px] text-slate-500 italic">
                     (Không bắt buộc chọn)

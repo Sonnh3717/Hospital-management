@@ -1,18 +1,14 @@
-package com.example.swd.integration;
+package com.example.swd.config;
 
 import com.example.swd.dto.response.BookingCheckoutResponse;
 import com.example.swd.entity.appointment.Appointment;
-import com.example.swd.entity.billing.Invoice;
 import com.example.swd.entity.billing.Payment;
 import com.example.swd.entity.identity.UserAccount;
-import com.example.swd.exception.WorkflowException;
 import com.example.swd.repository.AppointmentRepository;
-import com.example.swd.repository.InvoiceRepository;
 import com.example.swd.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,0 +1,131 @@
+@startuml Sequence_WalkIn
+title Sequence Diagram: Reception Walk-in Appointment Creation (Walk-in)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "Receptionist" as Receptionist
+participant "ReceptionWalkInPage" as ReceptionWalkInPage <<boundary>>
+participant "ReceptionAppointmentController" as ReceptionAppointmentController <<control>>
+participant "ReceptionAppointmentServiceImpl" as ReceptionAppointmentServiceImpl <<control>>
+participant "PatientRepository" as PatientRepository <<database>>
+participant "AppointmentSlotRepository" as AppointmentSlotRepository <<database>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+
+== Step 1: Patient Profile Resolution (Lookup or New Entry) ==
+alt Existing patient lookup
+    Receptionist -> ReceptionWalkInPage: enter patient phone number or code
+    activate ReceptionWalkInPage
+    Receptionist -> ReceptionWalkInPage: click "Search" button
+    ReceptionWalkInPage -> ReceptionAppointmentController: searchPatients(searchQuery)
+    activate ReceptionAppointmentController
+    ReceptionAppointmentController -> ReceptionAppointmentServiceImpl: searchPatients(searchQuery)
+    activate ReceptionAppointmentServiceImpl
+    ReceptionAppointmentServiceImpl -> PatientRepository: searchByPhoneOrCode(searchQuery)
+    activate PatientRepository
+    PatientRepository --> ReceptionAppointmentServiceImpl: return patientList
+    deactivate PatientRepository
+    ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: return patientViews
+    deactivate ReceptionAppointmentServiceImpl
+    ReceptionAppointmentController --> ReceptionWalkInPage: return patientList
+    deactivate ReceptionAppointmentController
+    Receptionist -> ReceptionWalkInPage: select patient from list
+else New patient registration
+    Receptionist -> ReceptionWalkInPage: select "New Patient" tab
+    Receptionist -> ReceptionWalkInPage: enter patient demographics (fullName, dob, gender, phone, address)
+end
+
+== Step 2: Select Date, Shift & Doctor ==
+Receptionist -> ReceptionWalkInPage: select service, date, shift and doctor
+ReceptionWalkInPage -> ReceptionAppointmentController: getReceptionOptions(date)
+activate ReceptionAppointmentController
+ReceptionAppointmentController -> ReceptionAppointmentServiceImpl: getReceptionOptions(date)
+activate ReceptionAppointmentServiceImpl
+ReceptionAppointmentServiceImpl -> AppointmentSlotRepository: findSlotsForDate(date)
+activate AppointmentSlotRepository
+AppointmentSlotRepository --> ReceptionAppointmentServiceImpl: return slotList
+deactivate AppointmentSlotRepository
+ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: return receptionOptions
+deactivate ReceptionAppointmentServiceImpl
+ReceptionAppointmentController --> ReceptionWalkInPage: return receptionOptions
+deactivate ReceptionAppointmentController
+ReceptionWalkInPage --> Receptionist: display shifts and doctors on duty
+
+== Step 3: Collect Fee & Confirm Walk-in Appointment ==
+Receptionist -> ReceptionWalkInPage: select payment method (cash at desk / PayOS VietQR)
+Receptionist -> ReceptionWalkInPage: click "Create Appointment" button
+
+ReceptionWalkInPage -> ReceptionAppointmentController: createWalkInAppointment(appointmentData)
+activate ReceptionAppointmentController
+
+ReceptionAppointmentController -> ReceptionAppointmentServiceImpl: create(appointmentData, receptionistId)
+activate ReceptionAppointmentServiceImpl
+
+ReceptionAppointmentServiceImpl -> AppointmentSlotRepository: lockSlotById(slotId)
+activate AppointmentSlotRepository
+AppointmentSlotRepository --> ReceptionAppointmentServiceImpl: return appointmentSlot
+deactivate AppointmentSlotRepository
+
+ReceptionAppointmentServiceImpl -> ReceptionAppointmentServiceImpl: validateSlotAndEnsureCapacity(slot)
+
+alt Slot invalid or capacity exceeded
+    ReceptionAppointmentServiceImpl-->ReceptionAppointmentController: throw SlotUnavailableException()
+    ReceptionAppointmentController-->ReceptionWalkInPage: return creationFailed(message)
+    ReceptionWalkInPage-->Receptionist: display error message("Selected shift is fully booked or expired")
+else Walk-in appointment created successfully
+    alt New patient profile
+        ReceptionAppointmentServiceImpl -> PatientRepository: createPatient(patientData)
+        activate PatientRepository
+        PatientRepository --> ReceptionAppointmentServiceImpl: return patientEntity
+        deactivate PatientRepository
+    end
+
+    ReceptionAppointmentServiceImpl -> AppointmentRepository: createAppointment(appointmentData)
+    activate AppointmentRepository
+    AppointmentRepository --> ReceptionAppointmentServiceImpl: return appointmentEntity (status: BOOKED)
+    deactivate AppointmentRepository
+
+    ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: return appointmentView
+    deactivate ReceptionAppointmentServiceImpl
+
+    ReceptionAppointmentController --> ReceptionWalkInPage: return appointmentView
+    deactivate ReceptionAppointmentController
+
+    ReceptionWalkInPage --> Receptionist: display appointment ticket with queue number and print
+    
+    opt Receptionist clicks "Immediate Check-in"
+        Receptionist -> ReceptionWalkInPage: click "Check-in Now" button
+        ReceptionWalkInPage -> ReceptionAppointmentController: checkIn(appointmentId)
+        activate ReceptionAppointmentController
+        ReceptionAppointmentController -> ReceptionAppointmentServiceImpl: checkIn(appointmentId, receptionistId)
+        activate ReceptionAppointmentServiceImpl
+        ReceptionAppointmentServiceImpl -> AppointmentRepository: updateStatus(CHECKED_IN, checkedInTime)
+        activate AppointmentRepository
+        AppointmentRepository --> ReceptionAppointmentServiceImpl: return updatedAppointment
+        deactivate AppointmentRepository
+        ReceptionAppointmentServiceImpl --> ReceptionAppointmentController: return appointmentView
+        deactivate ReceptionAppointmentServiceImpl
+        ReceptionAppointmentController --> ReceptionWalkInPage: return checkInSuccess
+        deactivate ReceptionAppointmentController
+        ReceptionWalkInPage --> Receptionist: display status "Checked-in" (patient added to doctor waiting queue)
+        deactivate ReceptionWalkInPage
+    end
+end
+
+@enduml

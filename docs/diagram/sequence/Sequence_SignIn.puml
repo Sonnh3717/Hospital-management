@@ -1,0 +1,84 @@
+@startuml Sequence_SignIn
+title Sequence Diagram: User Authentication (Sign-in)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "User" as User
+participant "LoginPage" as LoginPage <<boundary>>
+participant "AuthController" as AuthController <<control>>
+participant "AuthServiceImpl" as AuthServiceImpl <<control>>
+participant "PasswordEncoder" as PasswordEncoder <<utility>>
+participant "UserAccountRepository" as UserAccountRepository <<database>>
+participant "AuthSessionRepository" as AuthSessionRepository <<database>>
+
+User -> LoginPage: enter username and password
+activate LoginPage
+
+User -> LoginPage: click "Sign in" button
+
+LoginPage -> AuthController: login(username, password)
+activate AuthController
+
+AuthController -> AuthServiceImpl: login(username, password)
+activate AuthServiceImpl
+
+AuthServiceImpl -> UserAccountRepository: findForLogin(usernameOrEmail)
+activate UserAccountRepository
+UserAccountRepository --> AuthServiceImpl: return userAccount
+deactivate UserAccountRepository
+
+alt User account not found
+    AuthServiceImpl --> AuthController: throw InvalidCredentialsException()
+    AuthController --> LoginPage: return authenticationFailed(message)
+    LoginPage --> User: display error message("Invalid username or password")
+else Password mismatch
+    AuthServiceImpl -> PasswordEncoder: matches(rawPassword, passwordHash)
+    activate PasswordEncoder
+    PasswordEncoder --> AuthServiceImpl: return false
+    deactivate PasswordEncoder
+    AuthServiceImpl --> AuthController: throw InvalidCredentialsException()
+    AuthController --> LoginPage: return authenticationFailed(message)
+    LoginPage --> User: display error message("Invalid username or password")
+else Account inactive (status != ACTIVE)
+    AuthServiceImpl --> AuthController: throw AccountInactiveException()
+    AuthController --> LoginPage: return accountInactive(message)
+    LoginPage --> User: display error message("Account is locked or pending activation")
+else Authentication successful
+    AuthServiceImpl -> PasswordEncoder: matches(rawPassword, passwordHash)
+    activate PasswordEncoder
+    PasswordEncoder --> AuthServiceImpl: return true
+    deactivate PasswordEncoder
+
+    AuthServiceImpl -> AuthSessionRepository: createSession(userAccount, expiresAt)
+    activate AuthSessionRepository
+    AuthSessionRepository --> AuthServiceImpl: return authSession
+    deactivate AuthSessionRepository
+
+    AuthServiceImpl --> AuthController: return loginResponse(token, userProfile)
+    deactivate AuthServiceImpl
+
+    AuthController --> LoginPage: return loginSuccess(token, userProfile)
+    deactivate AuthController
+
+    LoginPage --> User: save session token and redirect to dashboard
+    deactivate LoginPage
+end
+
+@enduml

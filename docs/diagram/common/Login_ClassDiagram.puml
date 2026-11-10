@@ -1,0 +1,152 @@
+@startuml Login_Class_Diagram
+title Hospital Management - Authentication & Login Class Diagram (from Source Code)
+
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam roundcorner 8
+skinparam shadowing false
+
+package "Controller Layer" {
+    class AuthController <<control>> {
+        - authService: AuthService
+        + login(request: LoginRequest): ResponseEntity<LoginResponse>
+        + getCurrentUser(authorization: String): ResponseEntity<UserInfoResponse>
+        + logout(authorization: String): ResponseEntity<Map<String, Object>>
+        - extractToken(authorization: String): String
+    }
+}
+
+package "DTOs" {
+    class LoginRequest {
+        - username: String
+        - password: String
+        + getUsername(): String
+        + getPassword(): String
+    }
+
+    class LoginResponse {
+        - token: String
+        - user: UserInfoResponse
+        + getToken(): String
+        + getUser(): UserInfoResponse
+    }
+
+    class UserInfoResponse {
+        - id: Long
+        - username: String
+        - email: String
+        - role: String
+        - fullName: String
+    }
+}
+
+package "Service Layer" {
+    interface AuthService <<interface>> {
+        + login(request: LoginRequest): LoginResponse
+        + getCurrentUser(sessionId: String): UserInfoResponse
+        + authenticate(token: String): StaffPrincipal
+        + logout(sessionId: String): void
+    }
+
+    class AuthServiceImpl <<control>> {
+        - userAccountRepository: UserAccountRepository
+        - authSessionRepository: AuthSessionRepository
+        - hospitalStaffRepository: HospitalStaffRepository
+        - patientRepository: PatientRepository
+        - passwordEncoder: PasswordEncoder
+        + login(request: LoginRequest): LoginResponse
+        + getCurrentUser(sessionId: String): UserInfoResponse
+        + authenticate(token: String): StaffPrincipal
+        + logout(sessionId: String): void
+    }
+}
+
+package "Repository Layer" {
+    interface UserAccountRepository <<interface>> {
+        + findForLogin(login: String): Optional<UserAccount>
+        + findByUsername(username: String): Optional<UserAccount>
+        + findByLoginEmail(loginEmail: String): Optional<UserAccount>
+        + save(account: UserAccount): UserAccount
+    }
+
+    interface AuthSessionRepository <<interface>> {
+        + findForAuthentication(id: String): Optional<AuthSession>
+        + save(session: AuthSession): AuthSession
+    }
+
+    interface RoleRepository <<interface>> {
+        + findByRoleCode(roleCode: RoleCode): Optional<Role>
+    }
+}
+
+package "Domain Entities" {
+    enum RoleCode <<enumeration>> {
+        ADMIN
+        MANAGER
+        DOCTOR
+        MEDICAL_SERVICE_STAFF
+        RECEPTIONIST
+        PATIENT
+    }
+
+    enum ActiveStatus <<enumeration>> {
+        ACTIVE
+        INACTIVE
+    }
+
+    enum RevocationReason <<enumeration>> {
+        LOGOUT
+        ACCOUNT_DISABLED
+        PASSWORD_RESET
+    }
+
+    class Role <<entity>> {
+        - id: Short
+        - roleCode: RoleCode
+        - roleName: String
+        + getId(): Short
+        + getRoleCode(): RoleCode
+        + getRoleName(): String
+    }
+
+    class UserAccount <<entity>> {
+        - id: Long
+        - role: Role
+        - username: String
+        - loginEmail: String
+        - passwordHash: String
+        - status: ActiveStatus
+        - passwordChangedAt: LocalDateTime
+        + getId(): Long
+        + getUsername(): String
+        + getLoginEmail(): String
+        + getPasswordHash(): String
+        + getStatus(): ActiveStatus
+    }
+
+    class AuthSession <<entity>> {
+        - id: String
+        - userAccount: UserAccount
+        - expiresAt: LocalDateTime
+        - revokedAt: LocalDateTime
+        - revocationReason: RevocationReason
+        + getId(): String
+        + getUserAccount(): UserAccount
+        + getExpiresAt(): LocalDateTime
+    }
+}
+
+' Relationships
+AuthController ..> AuthService : uses
+AuthServiceImpl ..|> AuthService : implements
+AuthServiceImpl ..> UserAccountRepository : uses
+AuthServiceImpl ..> AuthSessionRepository : uses
+AuthController ..> LoginRequest : uses
+AuthController ..> LoginResponse : uses
+LoginResponse --> UserInfoResponse
+
+UserAccount "0..*" --> "1" Role : role
+AuthSession "0..*" --> "1" UserAccount : userAccount
+
+@enduml
+

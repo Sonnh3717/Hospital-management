@@ -19,9 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.swd.dto.response.ApiResponse;
 import com.example.swd.dto.response.WorkflowViews;
-import com.example.swd.mapper.WorkflowMapper;
+import com.example.swd.config.WorkflowMapper;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

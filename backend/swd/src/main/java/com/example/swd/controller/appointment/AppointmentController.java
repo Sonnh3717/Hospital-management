@@ -1,5 +1,7 @@
 package com.example.swd.controller.appointment;
 
+import com.example.swd.config.ClinicalMapper;
+import com.example.swd.config.PayOSService;
 import com.example.swd.dto.request.CancelAppointmentRequest;
 import com.example.swd.dto.request.CreateAppointmentRequest;
 import com.example.swd.dto.request.RescheduleRequest;
@@ -19,9 +21,9 @@ import com.example.swd.repository.PatientRepository;
 import com.example.swd.repository.UserAccountRepository;
 import com.example.swd.security.StaffPrincipal;
 import com.example.swd.service.AppointmentService;
-import com.example.swd.integration.PayOSService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,7 +35,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.example.swd.dto.response.ClinicalViews;
-import com.example.swd.mapper.ClinicalMapper;
 import com.example.swd.repository.EncounterRepository;
 import java.util.Map;
 
@@ -49,6 +50,8 @@ public class AppointmentController {
     private MedicalServiceRepository medicalServiceRepository;
     private EncounterRepository encounterRepository;
     private ClinicalMapper clinicalMapper;
+    @Autowired(required = false)
+    private com.example.swd.service.AppointmentSchedulerService appointmentSchedulerService;
 
     public AppointmentController(
             AppointmentService appointmentService,
@@ -189,13 +192,15 @@ public class AppointmentController {
             @RequestParam(required = false) Long patientId,
             @AuthenticationPrincipal StaffPrincipal principal) {
         Long targetPatientId = patientId;
-        boolean isAdmin = principal != null && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
+        boolean isAdmin = principal != null
+                && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
 
         if (!isAdmin) {
             targetPatientId = principal != null && principal.patientId() != null
                     ? principal.patientId()
                     : (principal != null && principal.accountId() != null
-                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId).orElse(null)
+                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId)
+                                    .orElse(null)
                             : null);
         }
 
@@ -235,15 +240,18 @@ public class AppointmentController {
         Appointment appt = appointmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lịch hẹn."));
 
-        boolean isAdmin = principal != null && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
+        boolean isAdmin = principal != null
+                && ("ADMIN".equalsIgnoreCase(principal.role()) || "ROLE_ADMIN".equalsIgnoreCase(principal.role()));
         if (!isAdmin && principal != null) {
             Long patientId = principal.patientId() != null
                     ? principal.patientId()
                     : (principal.accountId() != null
-                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId).orElse(null)
+                            ? patientRepository.findByUserAccount_Id(principal.accountId()).map(Patient::getId)
+                                    .orElse(null)
                             : null);
             if (patientId == null || !patientId.equals(appt.getPatient().getId())) {
-                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền truy cập hồ sơ này.");
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Bạn không có quyền truy cập hồ sơ này.");
             }
         }
 
@@ -254,5 +262,19 @@ public class AppointmentController {
 
         var encounterView = clinicalMapper.encounter(encounterOpt.get());
         return ResponseEntity.ok(ApiResponse.ok("Kết quả khám bệnh", encounterView));
+    }
+
+    /**
+     * Kích hoạt quét NO_SHOW thủ công (Dành cho Lễ tân hoặc Admin)
+     */
+    @PostMapping("/appointments/scan-no-show")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> scanNoShow() {
+        if (appointmentSchedulerService != null) {
+            int count = appointmentSchedulerService.scanAndMarkNoShow();
+            return ResponseEntity.ok(ApiResponse.ok("Đã quét và cập nhật " + count + " lịch hẹn sang NO_SHOW",
+                    Map.of("updatedCount", count)));
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Dịch vụ quét lịch hẹn chưa sẵn sàng", Map.of("updatedCount", 0)));
     }
 }

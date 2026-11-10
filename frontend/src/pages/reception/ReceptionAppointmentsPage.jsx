@@ -113,8 +113,13 @@ export default function ReceptionAppointmentsPage() {
     loadAppointments();
   }, [loadAppointments]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
+    try {
+      await appointmentApi.scanNoShow();
+    } catch (e) {
+      // ignore
+    }
     loadAppointments();
   };
 
@@ -967,7 +972,8 @@ export default function ReceptionAppointmentsPage() {
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
                   {rescheduleSlots.map((slot) => {
                     const isSelected = selectedSlotId === slot.id;
-                    const hasCapacity = slot.remaining > 0;
+                    const isPast = slot.endsAt && new Date(slot.endsAt) <= new Date();
+                    const hasCapacity = slot.remaining > 0 && !isPast;
 
                     return (
                       <button
@@ -983,11 +989,11 @@ export default function ReceptionAppointmentsPage() {
                             : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
                         }`}
                       >
-                        <div className="font-bold">
+                        <div className={`font-bold ${isPast ? 'line-through text-slate-400' : ''}`}>
                           {formatTimeOnly(slot.startsAt)} - {formatTimeOnly(slot.endsAt)}
                         </div>
-                        <div className={`text-[10px] mt-1 ${isSelected ? 'text-sky-100' : 'text-slate-500'}`}>
-                          {hasCapacity ? `Còn ${slot.remaining} chỗ` : 'Hết chỗ'}
+                        <div className={`text-[10px] mt-1 ${isSelected ? 'text-sky-100' : isPast ? 'text-rose-500 font-semibold' : 'text-slate-500'}`}>
+                          {isPast ? 'Đã qua giờ' : hasCapacity ? `Còn ${slot.remaining} chỗ` : 'Hết chỗ'}
                         </div>
                       </button>
                     );

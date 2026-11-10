@@ -1,0 +1,103 @@
+@startuml Sequence_Booking
+title Sequence Diagram: Online Appointment Booking (Patient Booking)
+
+autonumber
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+skinparam participant {
+    BackgroundColor #7fc9ff
+    BorderColor #3070b0
+    RoundCorner 6
+    FontColor #000000
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+}
+
+actor "Patient" as Patient
+participant "PatientBookingPage" as PatientBookingPage <<boundary>>
+participant "AppointmentController" as AppointmentController <<control>>
+participant "AppointmentServiceImpl" as AppointmentServiceImpl <<control>>
+participant "AppointmentSlotRepository" as AppointmentSlotRepository <<database>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+participant "PatientRepository" as PatientRepository <<database>>
+participant "PayOSPaymentGateway" as PayOSPaymentGateway <<external>>
+
+== Step 1: Select Service, Date, Shift & Doctor ==
+Patient -> PatientBookingPage: select service, date, shift and doctor
+activate PatientBookingPage
+
+PatientBookingPage -> AppointmentController: getAvailableSlots(serviceId, date, doctorId)
+activate AppointmentController
+
+AppointmentController -> AppointmentServiceImpl: getAvailableSlots(date, doctorId)
+activate AppointmentServiceImpl
+
+AppointmentServiceImpl -> AppointmentSlotRepository: findAvailableSlots(dateStart, dateEnd)
+activate AppointmentSlotRepository
+AppointmentSlotRepository --> AppointmentServiceImpl: return availableSlots
+deactivate AppointmentSlotRepository
+
+AppointmentServiceImpl --> AppointmentController: return availableSlotResponses
+deactivate AppointmentServiceImpl
+
+AppointmentController --> PatientBookingPage: return slotOptions
+deactivate AppointmentController
+
+PatientBookingPage --> Patient: display available shifts and doctor list
+
+== Step 2: Fill Patient Info & Submit Booking ==
+Patient -> PatientBookingPage: enter patient information (fullName, phone, dob, gender, address, reason)
+Patient -> PatientBookingPage: click "Confirm Booking" button
+
+PatientBookingPage -> AppointmentController: createAppointment(bookingData)
+activate AppointmentController
+
+AppointmentController -> AppointmentServiceImpl: createAppointment(bookingData, accountId)
+activate AppointmentServiceImpl
+
+AppointmentServiceImpl -> AppointmentSlotRepository: lockSlotById(slotId)
+activate AppointmentSlotRepository
+AppointmentSlotRepository --> AppointmentServiceImpl: return appointmentSlot
+deactivate AppointmentSlotRepository
+
+alt Slot is fully booked or unavailable
+    AppointmentServiceImpl --> AppointmentController: throw SlotFullException()
+    AppointmentController --> PatientBookingPage: return slotFullError(message)
+    PatientBookingPage --> Patient: display error message("Selected shift is full, please choose another slot")
+else Slot is open and capacity is available
+    AppointmentServiceImpl -> PatientRepository: findOrCreatePatient(patientData)
+    activate PatientRepository
+    PatientRepository --> AppointmentServiceImpl: return patientEntity
+    deactivate PatientRepository
+
+    AppointmentServiceImpl -> AppointmentRepository: createAppointment(appointmentData)
+    activate AppointmentRepository
+    AppointmentRepository --> AppointmentServiceImpl: return appointmentEntity (status: BOOKED)
+    deactivate AppointmentRepository
+
+    AppointmentServiceImpl -> PayOSPaymentGateway: createPaymentLink(orderCode, feeAmount, description)
+    activate PayOSPaymentGateway
+    PayOSPaymentGateway --> AppointmentServiceImpl: return paymentLinkData(checkoutUrl, qrCodeUrl)
+    deactivate PayOSPaymentGateway
+
+    AppointmentServiceImpl --> AppointmentController: return appointmentResponse(appointment, paymentData)
+    deactivate AppointmentServiceImpl
+
+    AppointmentController --> PatientBookingPage: return bookingSuccess(appointment, paymentData)
+    deactivate AppointmentController
+
+    PatientBookingPage --> Patient: display VietQR payment modal
+    Patient -> PayOSPaymentGateway: scan QR code and complete payment
+    PayOSPaymentGateway -> PatientBookingPage: notify paymentSuccess(orderCode)
+    PatientBookingPage --> Patient: display appointment confirmation ticket with QR code
+    deactivate PatientBookingPage
+end
+
+@enduml

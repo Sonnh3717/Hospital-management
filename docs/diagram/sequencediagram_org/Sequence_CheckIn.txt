@@ -1,0 +1,64 @@
+title Sequence Diagram: Patient Intake Check-in (Check-in)
+
+autonumber
+
+actor "Receptionist" as Receptionist
+participant "ReceptionAppointmentPage" as ReceptionAppointmentPage <<boundary>>
+participant "ReceptionAppointmentController" as ReceptionAppointmentController <<control>>
+participant "ReceptionAppointmentServiceImpl" as ReceptionAppointmentServiceImpl <<control>>
+participant "AppointmentRepository" as AppointmentRepository <<database>>
+participant "EncounterRepository" as EncounterRepository <<database>>
+participant "HospitalStaffRepository" as HospitalStaffRepository <<database>>
+
+Receptionist->ReceptionAppointmentPage: scan appointment QR code or enter appointment code
+activate ReceptionAppointmentPage
+ReceptionAppointmentPage-->Receptionist: display appointment details (status: BOOKED)
+
+Receptionist->ReceptionAppointmentPage: click "Check-in" button
+ReceptionAppointmentPage->ReceptionAppointmentController: checkIn(appointmentId)
+activate ReceptionAppointmentController
+
+ReceptionAppointmentController->ReceptionAppointmentServiceImpl: checkIn(appointmentId, receptionistId)
+activate ReceptionAppointmentServiceImpl
+
+ReceptionAppointmentServiceImpl->AppointmentRepository: lockAppointmentById(appointmentId)
+activate AppointmentRepository
+AppointmentRepository-->ReceptionAppointmentServiceImpl: return appointmentEntity
+deactivate AppointmentRepository
+
+alt Appointment is not in BOOKED status (e.g. CANCELLED or COMPLETED)
+    ReceptionAppointmentServiceImpl-->ReceptionAppointmentController: throw InvalidAppointmentStateException()
+    ReceptionAppointmentController-->ReceptionAppointmentPage: return errorResponse("Only booked appointments can be checked in")
+    ReceptionAppointmentPage-->Receptionist: display error message("Invalid appointment state")
+else Appointment date is not today
+    ReceptionAppointmentServiceImpl-->ReceptionAppointmentController: throw InvalidIntakeDateException()
+    ReceptionAppointmentController-->ReceptionAppointmentPage: return errorResponse("Appointment is not scheduled for today")
+    ReceptionAppointmentPage-->Receptionist: display error message("Patient arrived on incorrect date")
+else Doctor has already started consultation
+    ReceptionAppointmentServiceImpl->EncounterRepository: findByAppointmentId(appointmentId)
+    activate EncounterRepository
+    EncounterRepository-->ReceptionAppointmentServiceImpl: return encounterEntity
+    deactivate EncounterRepository
+    ReceptionAppointmentServiceImpl-->ReceptionAppointmentController: throw EncounterAlreadyStartedException()
+    ReceptionAppointmentController-->ReceptionAppointmentPage: return errorResponse("Encounter already in progress")
+    ReceptionAppointmentPage-->Receptionist: display error message("Consultation in progress, cannot check-in again")
+else Check-in successful
+    ReceptionAppointmentServiceImpl->HospitalStaffRepository: getStaffReference(receptionistId)
+    activate HospitalStaffRepository
+    HospitalStaffRepository-->ReceptionAppointmentServiceImpl: return staffEntity
+    deactivate HospitalStaffRepository
+
+    ReceptionAppointmentServiceImpl->AppointmentRepository: updateCheckIn(CHECKED_IN, checkedInTime, staffEntity)
+    activate AppointmentRepository
+    AppointmentRepository-->ReceptionAppointmentServiceImpl: return updatedAppointment
+    deactivate AppointmentRepository
+
+    ReceptionAppointmentServiceImpl-->ReceptionAppointmentController: return appointmentView
+    deactivate ReceptionAppointmentServiceImpl
+
+    ReceptionAppointmentController-->ReceptionAppointmentPage: return checkInSuccess(appointmentView)
+    deactivate ReceptionAppointmentController
+
+    ReceptionAppointmentPage-->Receptionist: display success notification ("Checked in successfully")\n(Patient added to Doctor Waiting List)
+    deactivate ReceptionAppointmentPage
+end

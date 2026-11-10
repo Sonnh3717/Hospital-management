@@ -1,0 +1,237 @@
+@startuml AppointmentClass
+title Class Diagram: Appointment & Scheduling Management (AppointmentClass)
+
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "Controller Layer" {
+    class AppointmentController <<control>> {
+        - appointmentService: AppointmentService
+        + getAvailableSlots(date: LocalDate, doctorId: Long): ResponseEntity<List<AvailableSlotResponse>>
+        + createOnlineBooking(request: CreateBookingRequest, principal: UserPrincipal): ResponseEntity<AppointmentResponse>
+        + checkInAppointment(appointmentId: Long, principal: StaffPrincipal): ResponseEntity<AppointmentResponse>
+        + undoCheckIn(appointmentId: Long, request: UndoCheckInRequest, principal: StaffPrincipal): ResponseEntity<AppointmentResponse>
+        + cancelAppointment(appointmentId: Long, request: CancelAppointmentRequest, principal: UserPrincipal): ResponseEntity<AppointmentResponse>
+        + rescheduleAppointment(appointmentId: Long, request: RescheduleAppointmentRequest, principal: UserPrincipal): ResponseEntity<AppointmentResponse>
+    }
+
+    class ReceptionAppointmentController <<control>> {
+        - receptionService: ReceptionAppointmentService
+        + list(actor: StaffPrincipal, date: LocalDate, doctorId: Long, status: Status, search: String, page: int, size: int): PageView<AppointmentView>
+        + options(actor: StaffPrincipal, date: LocalDate): ReceptionOptions
+        + create(actor: StaffPrincipal, input: CreateAppointment): AppointmentView
+        + checkIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + undoCheckIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + cancel(actor: StaffPrincipal, id: Long, reason: String): AppointmentView
+        + reschedule(actor: StaffPrincipal, id: Long, destinationId: Long): AppointmentView
+    }
+}
+
+package "Service Layer" {
+    interface AppointmentService <<interface>> {
+        + getAvailableSlots(date: LocalDate, doctorId: Long): List<AvailableSlotResponse>
+        + createAppointment(request: CreateBookingRequest, accountId: Long): AppointmentResponse
+        + checkInAppointment(appointmentId: Long, staffAccountId: Long): AppointmentResponse
+        + undoCheckIn(appointmentId: Long, request: UndoCheckInRequest, staffAccountId: Long): AppointmentResponse
+        + cancelAppointment(appointmentId: Long, request: CancelAppointmentRequest, accountId: Long, isPatient: boolean): AppointmentResponse
+        + rescheduleAppointment(appointmentId: Long, request: RescheduleAppointmentRequest, accountId: Long, isPatient: boolean): AppointmentResponse
+    }
+
+    class AppointmentServiceImpl <<control>> {
+        - appointmentRepository: AppointmentRepository
+        - appointmentSlotRepository: AppointmentSlotRepository
+        - patientRepository: PatientRepository
+        - hospitalStaffRepository: HospitalStaffRepository
+        - encounterRepository: EncounterRepository
+        - userAccountRepository: UserAccountRepository
+        + getAvailableSlots(date: LocalDate, doctorId: Long): List<AvailableSlotResponse>
+        + createAppointment(request: CreateBookingRequest, accountId: Long): AppointmentResponse
+        + checkInAppointment(appointmentId: Long, staffAccountId: Long): AppointmentResponse
+        + undoCheckIn(appointmentId: Long, request: UndoCheckInRequest, staffAccountId: Long): AppointmentResponse
+        + cancelAppointment(appointmentId: Long, request: CancelAppointmentRequest, accountId: Long, isPatient: boolean): AppointmentResponse
+        + rescheduleAppointment(appointmentId: Long, request: RescheduleAppointmentRequest, accountId: Long, isPatient: boolean): AppointmentResponse
+    }
+
+    interface ReceptionAppointmentService <<interface>> {
+        + list(actor: StaffPrincipal, date: LocalDate, doctorId: Long, status: Status, search: String, page: int, size: int): PageView<AppointmentView>
+        + options(actor: StaffPrincipal, date: LocalDate): ReceptionOptions
+        + create(actor: StaffPrincipal, input: CreateAppointment): AppointmentView
+        + checkIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + undoCheckIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + cancel(actor: StaffPrincipal, id: Long, reason: String): AppointmentView
+        + reschedule(actor: StaffPrincipal, id: Long, destinationId: Long): AppointmentView
+    }
+
+    class ReceptionAppointmentServiceImpl <<control>> {
+        - appointments: AppointmentRepository
+        - slots: AppointmentSlotRepository
+        - patients: PatientRepository
+        - doctors: DoctorProfileRepository
+        - staff: HospitalStaffRepository
+        - accounts: UserAccountRepository
+        + list(actor: StaffPrincipal, date: LocalDate, doctorId: Long, status: Status, search: String, page: int, size: int): PageView<AppointmentView>
+        + options(actor: StaffPrincipal, date: LocalDate): ReceptionOptions
+        + create(actor: StaffPrincipal, input: CreateAppointment): AppointmentView
+        + checkIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + undoCheckIn(actor: StaffPrincipal, id: Long): AppointmentView
+        + cancel(actor: StaffPrincipal, id: Long, reason: String): AppointmentView
+        + reschedule(actor: StaffPrincipal, id: Long, destinationId: Long): AppointmentView
+        - validateSlot(slot: AppointmentSlot, source: BookingSource): void
+        - ensureCapacity(slot: AppointmentSlot): void
+    }
+}
+
+package "Repository Layer" {
+    interface AppointmentRepository <<interface>> {
+        + findById(id: Long): Optional<Appointment>
+        + save(appointment: Appointment): Appointment
+    }
+
+    interface AppointmentSlotRepository <<interface>> {
+        + findById(id: Long): Optional<AppointmentSlot>
+        + save(slot: AppointmentSlot): AppointmentSlot
+    }
+}
+
+package "Domain Entities" {
+    enum AppointmentStatus <<enumeration>> {
+        BOOKED
+        CHECKED_IN
+        CANCELLED
+        NO_SHOW
+        COMPLETED
+    }
+
+    enum BookingSource <<enumeration>> {
+        ONLINE
+        ASSISTED
+        WALK_IN
+    }
+
+    enum SlotStatus <<enumeration>> {
+        OPEN
+        BLOCKED
+    }
+
+    class Appointment <<entity>> {
+        - id: Long
+        - appointmentCode: String
+        - patient: Patient
+        - appointmentSlot: AppointmentSlot
+        - bookingSource: BookingSource
+        - status: AppointmentStatus
+        - reason: String
+        - note: String
+        - cancellationReason: String
+        - cancelledAt: LocalDateTime
+        - checkedInAt: LocalDateTime
+        - checkedInByStaff: HospitalStaff
+        - lastCheckInReversedAt: LocalDateTime
+        - lastCheckInReversedByStaff: HospitalStaff
+        - lastRescheduledAt: LocalDateTime
+        - createdByAccount: UserAccount
+    }
+
+    class AppointmentSlot <<entity>> {
+        - id: Long
+        - workSchedule: WorkSchedule
+        - appointmentRule: AppointmentRule
+        - startsAt: LocalDateTime
+        - endsAt: LocalDateTime
+        - capacity: Short
+        - status: SlotStatus
+    }
+
+    class AppointmentRule <<entity>> {
+        - id: Long
+        - ruleCode: String
+        - ruleName: String
+        - slotDurationMinutes: Integer
+        - defaultCapacity: Integer
+        - minBookingNoticeMinutes: Integer
+        - maxBookingDaysAhead: Integer
+        - active: Boolean
+    }
+
+    class WorkSchedule <<entity>> {
+        - id: Long
+        - staff: HospitalStaff
+        - shiftTemplate: ShiftTemplate
+        - startsAt: LocalDateTime
+        - endsAt: LocalDateTime
+        - status: ScheduleStatus
+    }
+
+    class ShiftTemplate <<entity>> {
+        - id: Long
+        - shiftCode: String
+        - shiftName: String
+        - startTime: LocalTime
+        - endTime: LocalTime
+    }
+
+    class Patient <<entity>> {
+        - id: Long
+        - patientCode: String
+        - fullName: String
+        - dateOfBirth: LocalDate
+        - gender: Gender
+        - phone: String
+        - contactEmail: String
+        - address: String
+    }
+
+    class HospitalStaff <<entity>> {
+        - id: Long
+        - staffCode: String
+        - fullName: String
+        - employmentStatus: ActiveStatus
+    }
+}
+
+package "DTOs & Views" {
+    class CreateAppointment {
+        + patientId: Long
+        + patient: NewPatient
+        + slotId: Long
+        + bookingSource: BookingSource
+        + reason: String
+        + idempotencyKey: String
+    }
+
+    class AppointmentView {
+        + id: Long
+        + appointmentCode: String
+        + patient: PatientView
+        + doctor: DoctorView
+        + slot: SlotView
+        + bookingSource: String
+        + status: String
+        + reason: String
+        + checkedInAt: String
+    }
+}
+
+' Relationships
+AppointmentController ..> AppointmentService : uses
+ReceptionAppointmentController ..> ReceptionAppointmentService : uses
+
+AppointmentServiceImpl ..|> AppointmentService : implements
+ReceptionAppointmentServiceImpl ..|> ReceptionAppointmentService : implements
+
+Appointment "0..*" --> "1" Patient : patient
+Appointment "0..*" --> "1" AppointmentSlot : appointmentSlot
+Appointment "0..*" --> "0..1" HospitalStaff : checkedInByStaff
+AppointmentSlot "0..*" --> "1" WorkSchedule : workSchedule
+AppointmentSlot "0..*" --> "1" AppointmentRule : appointmentRule
+WorkSchedule "0..*" --> "1" ShiftTemplate : shiftTemplate
+WorkSchedule "0..*" --> "1" HospitalStaff : staff
+
+AppointmentServiceImpl ..> Appointment : manages
+ReceptionAppointmentServiceImpl ..> Appointment : manages
+
+@enduml
+

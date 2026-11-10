@@ -76,11 +76,23 @@ export default function PatientAppointmentsPage() {
     fetchAppointments();
   };
 
+  // Helper: Normalize UTC ISO string from backend (ensuring trailing 'Z' if missing)
+  const parseUtcDate = (isoString) => {
+    if (!isoString) return null;
+    let s = String(isoString);
+    if (!s.endsWith('Z') && !s.includes('+') && s.includes('T')) {
+      s += 'Z';
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? new Date(isoString) : d;
+  };
+
   // 24h Notice Check Helper
   const check24hNotice = (startsAt) => {
     if (!startsAt) return { isEligible: false, hoursLeft: 0 };
     const now = new Date();
-    const start = new Date(startsAt);
+    const start = parseUtcDate(startsAt);
+    if (!start || isNaN(start.getTime())) return { isEligible: false, hoursLeft: 0 };
     const diffMs = start.getTime() - now.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     return {
@@ -92,8 +104,8 @@ export default function PatientAppointmentsPage() {
   // Format Date and Time
   const formatDateTime = (isoString) => {
     if (!isoString) return '--';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
+    const d = parseUtcDate(isoString);
+    if (!d || isNaN(d.getTime())) return isoString;
     const hours = String(d.getHours()).padStart(2, '0');
     const mins = String(d.getMinutes()).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -104,8 +116,8 @@ export default function PatientAppointmentsPage() {
 
   const formatDateOnly = (isoString) => {
     if (!isoString) return '--';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
+    const d = parseUtcDate(isoString);
+    if (!d || isNaN(d.getTime())) return isoString;
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -114,8 +126,8 @@ export default function PatientAppointmentsPage() {
 
   const formatTimeOnly = (isoString) => {
     if (!isoString) return '--';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
+    const d = parseUtcDate(isoString);
+    if (!d || isNaN(d.getTime())) return isoString;
     const hours = String(d.getHours()).padStart(2, '0');
     const mins = String(d.getMinutes()).padStart(2, '0');
     return `${hours}:${mins}`;
@@ -899,7 +911,8 @@ export default function PatientAppointmentsPage() {
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
                     {rescheduleSlots.map((slot) => {
                       const isSelected = selectedSlotId === slot.id;
-                      const hasCapacity = slot.remaining > 0;
+                      const isPast = slot.endsAt && (parseUtcDate(slot.endsAt) || new Date(slot.endsAt)) <= new Date();
+                      const hasCapacity = slot.remaining > 0 && !isPast;
 
                       return (
                         <button
@@ -915,11 +928,11 @@ export default function PatientAppointmentsPage() {
                               : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
                           }`}
                         >
-                          <div className="font-bold">
+                          <div className={`font-bold ${isPast ? 'line-through text-slate-400' : ''}`}>
                             {formatTimeOnly(slot.startsAt)} - {formatTimeOnly(slot.endsAt)}
                           </div>
-                          <div className={`text-[10px] mt-1 ${isSelected ? 'text-sky-100' : 'text-slate-500'}`}>
-                            {hasCapacity ? `Còn ${slot.remaining} chỗ` : 'Hết chỗ'}
+                          <div className={`text-[10px] mt-1 ${isSelected ? 'text-sky-100' : isPast ? 'text-rose-500 font-semibold' : 'text-slate-500'}`}>
+                            {isPast ? 'Đã qua giờ' : hasCapacity ? `Còn ${slot.remaining} chỗ` : 'Hết chỗ'}
                           </div>
                         </button>
                       );

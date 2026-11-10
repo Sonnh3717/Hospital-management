@@ -1,0 +1,103 @@
+title Sequence Diagram: Patient Registration with OTP Verification (Sign-up)
+
+autonumber
+
+actor "Patient" as Patient
+participant "RegisterPage" as RegisterPage <<boundary>>
+participant "PatientController" as PatientController <<control>>
+participant "PatientRegistrationServiceImpl" as PatientRegistrationServiceImpl <<control>>
+participant "RegistrationEmailService" as RegistrationEmailService <<service>>
+participant "UserAccountRepository" as UserAccountRepository <<database>>
+participant "RegistrationVerificationRepository" as RegistrationVerificationRepository <<database>>
+participant "PatientRepository" as PatientRepository <<database>>
+participant "RoleRepository" as RoleRepository <<database>>
+
+== Step 1: Submit Registration Form & Request OTP ==
+Patient->RegisterPage: enter registration details (fullName, email, password, phone, dob, gender)
+activate RegisterPage
+
+Patient->RegisterPage: click "Register" button
+
+RegisterPage->PatientController: register(registrationData)
+activate PatientController
+
+PatientController->PatientRegistrationServiceImpl: registerPatient(registrationData)
+activate PatientRegistrationServiceImpl
+
+PatientRegistrationServiceImpl->UserAccountRepository: findByEmail(email)
+activate UserAccountRepository
+UserAccountRepository-->PatientRegistrationServiceImpl: return userAccount
+deactivate UserAccountRepository
+
+alt Email already registered
+    PatientRegistrationServiceImpl-->PatientController: throw EmailAlreadyExistsException()
+    PatientController-->RegisterPage: return errorResponse("Email already in use")
+    RegisterPage-->Patient: display error message("Email is already registered")
+else Email is available
+    PatientRegistrationServiceImpl->RegistrationVerificationRepository: saveVerification(email, otpHash, registrationData, expiresAt)
+    activate RegistrationVerificationRepository
+    RegistrationVerificationRepository-->PatientRegistrationServiceImpl: return verificationRecord
+    deactivate RegistrationVerificationRepository
+
+    PatientRegistrationServiceImpl->RegistrationEmailService: sendOtpEmail(email, otpCode)
+    activate RegistrationEmailService
+    RegistrationEmailService-->PatientRegistrationServiceImpl: return emailSentSuccess
+    deactivate RegistrationEmailService
+
+    PatientRegistrationServiceImpl-->PatientController: return registrationPending(email)
+    deactivate PatientRegistrationServiceImpl
+
+    PatientController-->RegisterPage: return successResponse("OTP sent to email")
+    deactivate PatientController
+    RegisterPage-->Patient: display OTP verification modal
+end
+
+== Step 2: Verify OTP & Activate Patient Account ==
+Patient->RegisterPage: enter 6-digit OTP code
+Patient->RegisterPage: click "Verify & Activate" button
+
+RegisterPage->PatientController: verifyOtp(email, otpCode)
+activate PatientController
+
+PatientController->PatientRegistrationServiceImpl: verifyRegistration(email, otpCode)
+activate PatientRegistrationServiceImpl
+
+PatientRegistrationServiceImpl->RegistrationVerificationRepository: findByEmailAndStatus(email, PENDING)
+activate RegistrationVerificationRepository
+RegistrationVerificationRepository-->PatientRegistrationServiceImpl: return verificationRecord
+deactivate RegistrationVerificationRepository
+
+alt OTP invalid or expired
+    PatientRegistrationServiceImpl-->PatientController: throw InvalidOtpException()
+    PatientController-->RegisterPage: return errorResponse("Invalid or expired OTP")
+    RegisterPage-->Patient: display error message("Invalid or expired OTP code")
+else OTP verified successfully
+    PatientRegistrationServiceImpl->RoleRepository: findByRoleCode("PATIENT")
+    activate RoleRepository
+    RoleRepository-->PatientRegistrationServiceImpl: return roleEntity
+    deactivate RoleRepository
+
+    PatientRegistrationServiceImpl->UserAccountRepository: createUserAccount(email, passwordHash, roleEntity)
+    activate UserAccountRepository
+    UserAccountRepository-->PatientRegistrationServiceImpl: return userAccount
+    deactivate UserAccountRepository
+
+    PatientRegistrationServiceImpl->PatientRepository: createPatientProfile(userAccount, registrationData)
+    activate PatientRepository
+    PatientRepository-->PatientRegistrationServiceImpl: return patientProfile
+    deactivate PatientRepository
+
+    PatientRegistrationServiceImpl->RegistrationVerificationRepository: updateStatus(VERIFIED)
+    activate RegistrationVerificationRepository
+    RegistrationVerificationRepository-->PatientRegistrationServiceImpl: return updatedRecord
+    deactivate RegistrationVerificationRepository
+
+    PatientRegistrationServiceImpl-->PatientController: return authResponse(token, userProfile)
+    deactivate PatientRegistrationServiceImpl
+
+    PatientController-->RegisterPage: return registrationSuccess(token, userProfile)
+    deactivate PatientController
+
+    RegisterPage-->Patient: display success notification and redirect to patient dashboard
+    deactivate RegisterPage
+end

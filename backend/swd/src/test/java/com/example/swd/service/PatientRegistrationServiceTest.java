@@ -1,5 +1,5 @@
 package com.example.swd.service;
-import com.example.swd.integration.RegistrationEmailService;
+import com.example.swd.config.RegistrationEmailService;
 import com.example.swd.service.impl.PatientRegistrationServiceImpl;
 
 import com.example.swd.dto.request.RegistrationCommands;

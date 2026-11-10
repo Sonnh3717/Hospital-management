@@ -3,7 +3,7 @@ package com.example.swd.service;
 import com.example.swd.dto.request.ClinicalCommands.UnableInput;
 import com.example.swd.dto.response.ClinicalViews.QueueView;
 import com.example.swd.dto.response.ClinicalViews.RequestView;
-import com.example.swd.integration.ClinicalAttachmentStorage;
+import com.example.swd.config.ClinicalAttachmentStorage;
 import com.example.swd.security.StaffPrincipal;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -29,6 +29,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
     @Query("select a from Appointment a join a.appointmentSlot s join s.workSchedule w where w.staff.id = :doctorId and s.startsAt >= :from and s.startsAt < :to order by s.startsAt")
     List<Appointment> findDoctorAppointments(@Param("doctorId") Long doctorId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    @Query("select a from Appointment a join a.appointmentSlot s join s.workSchedule w where a.status = 'BOOKED' and w.endsAt <= :now")
+    @Query("select a from Appointment a join a.appointmentSlot s join s.workSchedule w where a.status = 'BOOKED' and (s.endsAt <= :now or w.endsAt <= :now)")
     List<Appointment> findUncheckedAppointmentsPastShiftEnd(@Param("now") LocalDateTime now);
 }

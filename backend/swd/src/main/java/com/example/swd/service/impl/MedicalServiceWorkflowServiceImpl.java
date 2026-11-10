@@ -1,7 +1,6 @@
 package com.example.swd.service.impl;
-import com.example.swd.integration.ClinicalAttachmentStorage;
-import com.example.swd.mapper.ClinicalMapper;
-import com.example.swd.service.MedicalServiceWorkflowService;
+import com.example.swd.config.ClinicalAttachmentStorage;
+import com.example.swd.config.ClinicalMapper;
 
 import com.example.swd.dto.request.ClinicalCommands.UnableInput;
 import com.example.swd.dto.response.ClinicalViews.*;

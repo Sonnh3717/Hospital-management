@@ -1,4 +1,4 @@
-package com.example.swd.mapper;
+package com.example.swd.config;
 
 import com.example.swd.dto.response.ClinicalViews.*;
 import com.example.swd.entity.appointment.Appointment;

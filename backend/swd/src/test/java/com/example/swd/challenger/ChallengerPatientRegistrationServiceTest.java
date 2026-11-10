@@ -8,7 +8,7 @@ import com.example.swd.entity.identity.Role;
 import com.example.swd.entity.identity.UserAccount;
 import com.example.swd.entity.patient.Patient;
 import com.example.swd.exception.WorkflowException;
-import com.example.swd.integration.RegistrationEmailService;
+import com.example.swd.config.RegistrationEmailService;
 import com.example.swd.repository.PatientRepository;
 import com.example.swd.repository.RegistrationVerificationRepository;
 import com.example.swd.repository.RoleRepository;

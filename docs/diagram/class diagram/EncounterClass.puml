@@ -1,0 +1,267 @@
+@startuml EncounterClass
+title Class Diagram: Doctor Consultation & Complete Encounter (EncounterClass)
+
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "Controller Layer" {
+    class DoctorClinicalController <<control>> {
+        - clinicalService: DoctorClinicalService
+        + worklist(actor: StaffPrincipal, date: LocalDate, status: String, page: int, size: int): PageView<WorklistView>
+        + start(actor: StaffPrincipal, id: Long): StartView
+        + get(actor: StaffPrincipal, id: Long): EncounterView
+        + history(actor: StaffPrincipal, id: Long): List<EncounterView>
+        + examination(actor: StaffPrincipal, id: Long, input: ExaminationInput): EncounterView
+        + treatment(actor: StaffPrincipal, id: Long, input: TreatmentInput): EncounterView
+        + createRequest(actor: StaffPrincipal, id: Long, input: RequestInput): EncounterView
+        + review(actor: StaffPrincipal, id: Long, resultId: Long, input: ReviewInput): EncounterView
+        + complete(actor: StaffPrincipal, id: Long): EncounterView
+    }
+}
+
+package "Service Layer" {
+    interface DoctorClinicalService <<interface>> {
+        + worklist(actor: StaffPrincipal, date: LocalDate, status: String, page: int, size: int): PageView<WorklistView>
+        + start(actor: StaffPrincipal, appointmentId: Long): StartView
+        + get(actor: StaffPrincipal, encounterId: Long): EncounterView
+        + history(actor: StaffPrincipal, encounterId: Long): List<EncounterView>
+        + catalogue(actor: StaffPrincipal): List<ServiceView>
+        + examination(actor: StaffPrincipal, id: Long, input: ExaminationInput): EncounterView
+        + treatment(actor: StaffPrincipal, id: Long, input: TreatmentInput): EncounterView
+        + createRequest(actor: StaffPrincipal, id: Long, input: RequestInput): EncounterView
+        + editRequest(actor: StaffPrincipal, id: Long, requestId: Long, input: RequestEditInput): EncounterView
+        + cancelRequest(actor: StaffPrincipal, id: Long, requestId: Long, input: ReasonInput): EncounterView
+        + review(actor: StaffPrincipal, id: Long, resultId: Long, input: ReviewInput): EncounterView
+        + complete(actor: StaffPrincipal, id: Long): EncounterView
+        + attachment(actor: StaffPrincipal, id: Long, requestId: Long): Download
+    }
+
+    class DoctorClinicalServiceImpl <<control>> {
+        - encounters: EncounterRepository
+        - diagnoses: EncounterDiagnosisRepository
+        - treatments: EncounterTreatmentRepository
+        - followUps: EncounterFollowUpRepository
+        - requests: MedicalServiceRequestRepository
+        - results: MedicalServiceResultRepository
+        - reviews: ServiceResultReviewRepository
+        - appointments: AppointmentRepository
+        - doctors: DoctorProfileRepository
+        - mapper: ClinicalMapper
+        + worklist(actor: StaffPrincipal, date: LocalDate, status: String, page: int, size: int): PageView<WorklistView>
+        + start(actor: StaffPrincipal, appointmentId: Long): StartView
+        + get(actor: StaffPrincipal, encounterId: Long): EncounterView
+        + history(actor: StaffPrincipal, encounterId: Long): List<EncounterView>
+        + catalogue(actor: StaffPrincipal): List<ServiceView>
+        + examination(actor: StaffPrincipal, id: Long, input: ExaminationInput): EncounterView
+        + treatment(actor: StaffPrincipal, id: Long, input: TreatmentInput): EncounterView
+        + createRequest(actor: StaffPrincipal, id: Long, input: RequestInput): EncounterView
+        + editRequest(actor: StaffPrincipal, id: Long, requestId: Long, input: RequestEditInput): EncounterView
+        + cancelRequest(actor: StaffPrincipal, id: Long, requestId: Long, input: ReasonInput): EncounterView
+        + review(actor: StaffPrincipal, id: Long, resultId: Long, input: ReviewInput): EncounterView
+        + complete(actor: StaffPrincipal, id: Long): EncounterView
+        + attachment(actor: StaffPrincipal, id: Long, requestId: Long): Download
+        - authorized(actor: StaffPrincipal, id: Long, lock: boolean): Encounter
+        - open(encounter: Encounter): void
+    }
+
+    class ClinicalMapper <<mapper>> {
+        - diagnoses: EncounterDiagnosisRepository
+        - treatments: EncounterTreatmentRepository
+        - followUps: EncounterFollowUpRepository
+        - requests: MedicalServiceRequestRepository
+        - results: MedicalServiceResultRepository
+        - reviews: ServiceResultReviewRepository
+        + encounter(encounter: Encounter): EncounterView
+        + blockers(encounter: Encounter): List<String>
+    }
+}
+
+package "Repository Layer" {
+    interface EncounterRepository <<interface>> {
+        + findById(id: Long): Optional<Encounter>
+        + save(encounter: Encounter): Encounter
+    }
+
+    interface EncounterDiagnosisRepository <<interface>> {
+        + findByEncounterId(encounterId: Long): List<EncounterDiagnosis>
+        + save(diagnosis: EncounterDiagnosis): EncounterDiagnosis
+    }
+
+    interface EncounterTreatmentRepository <<interface>> {
+        + findByEncounterId(encounterId: Long): Optional<EncounterTreatment>
+        + save(treatment: EncounterTreatment): EncounterTreatment
+    }
+
+    interface MedicalServiceRequestRepository <<interface>> {
+        + findByEncounterId(encounterId: Long): List<MedicalServiceRequest>
+        + save(request: MedicalServiceRequest): MedicalServiceRequest
+    }
+
+    interface MedicalServiceResultRepository <<interface>> {
+        + findByRequestId(requestId: Long): Optional<MedicalServiceResult>
+        + save(result: MedicalServiceResult): MedicalServiceResult
+    }
+
+    interface ServiceResultReviewRepository <<interface>> {
+        + findByResultId(resultId: Long): Optional<ServiceResultReview>
+        + save(review: ServiceResultReview): ServiceResultReview
+    }
+}
+
+package "Domain Entities (Clinical Record)" {
+    enum EncounterStatus <<enumeration>> {
+        IN_PROGRESS
+        COMPLETED
+    }
+
+    enum DiagnosisType <<enumeration>> {
+        PRIMARY
+        SECONDARY
+    }
+
+    enum RequestStatus <<enumeration>> {
+        ORDERED
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+    }
+
+    class Encounter <<entity>> {
+        - id: Long
+        - appointment: Appointment
+        - responsibleDoctor: DoctorProfile
+        - status: EncounterStatus
+        - startedAt: LocalDateTime
+        - completedAt: LocalDateTime
+        - chiefComplaint: String
+        - symptoms: String
+        - clinicalFindings: String
+        - clinicalNotes: String
+    }
+
+    class EncounterDiagnosis <<entity>> {
+        - id: Long
+        - encounter: Encounter
+        - icdCode: String
+        - diseaseName: String
+        - diagnosisType: DiagnosisType
+        - isSuspected: Boolean
+        - notes: String
+    }
+
+    class EncounterTreatment <<entity>> {
+        - id: Long
+        - encounter: Encounter
+        - decisionText: String
+        - instructions: String
+        - followUpRequired: Boolean
+    }
+
+    class EncounterFollowUp <<entity>> {
+        - id: Long
+        - encounter: Encounter
+        - requestedDate: LocalDate
+        - reason: String
+        - notes: String
+    }
+
+    class MedicalServiceRequest <<entity>> {
+        - id: Long
+        - encounter: Encounter
+        - requestCode: String
+        - serviceDefinition: MedicalServiceDefinition
+        - status: RequestStatus
+        - priority: Priority
+        - requestedAt: LocalDateTime
+    }
+
+    class MedicalServiceResult <<entity>> {
+        - id: Long
+        - medicalServiceRequest: MedicalServiceRequest
+        - summary: String
+        - details: String
+        - attachmentUrl: String
+        - completedAt: LocalDateTime
+    }
+
+    class ServiceResultReview <<entity>> {
+        - id: Long
+        - medicalServiceResult: MedicalServiceResult
+        - reviewingDoctor: DoctorProfile
+        - reviewNotes: String
+        - handlingDecision: String
+        - reviewedAt: LocalDateTime
+    }
+
+    class DoctorProfile <<entity>> {
+        - id: Long
+        - staff: HospitalStaff
+        - licenseNumber: String
+        - specialization: String
+        - isActive: Boolean
+    }
+
+    class Appointment <<entity>> {
+        - id: Long
+        - appointmentCode: String
+        - patient: Patient
+        - status: AppointmentStatus
+    }
+}
+
+package "DTOs & Command Inputs" {
+    class ExaminationInput {
+        + chiefComplaint: String
+        + symptoms: String
+        + clinicalFindings: String
+        + clinicalNotes: String
+        + diagnoses: List<DiagnosisInput>
+    }
+
+    class TreatmentInput {
+        + decisionText: String
+        + instructions: String
+        + followUpRequired: Boolean
+        + followUps: List<FollowUpInput>
+    }
+
+    class ReviewInput {
+        + reviewNotes: String
+        + handlingDecision: String
+    }
+
+    class EncounterView {
+        + id: Long
+        + appointmentId: Long
+        + status: String
+        + chiefComplaint: String
+        + symptoms: String
+        + clinicalFindings: String
+        + diagnoses: List<DiagnosisView>
+        + treatment: TreatmentView
+        + requests: List<ServiceRequestView>
+        + blockers: List<String>
+    }
+}
+
+' Relationships
+DoctorClinicalController ..> DoctorClinicalService : uses
+DoctorClinicalServiceImpl ..|> DoctorClinicalService : implements
+DoctorClinicalServiceImpl ..> ClinicalMapper : uses
+
+Encounter "0..*" --> "1" Appointment : appointment
+Encounter "0..*" --> "1" DoctorProfile : responsibleDoctor
+EncounterDiagnosis "0..*" --> "1" Encounter : encounter
+EncounterTreatment "0..1" --> "1" Encounter : encounter
+EncounterFollowUp "0..*" --> "1" Encounter : encounter
+MedicalServiceRequest "0..*" --> "1" Encounter : encounter
+MedicalServiceResult "1" --> "1" MedicalServiceRequest : medicalServiceRequest
+ServiceResultReview "0..1" --> "1" MedicalServiceResult : medicalServiceResult
+
+ClinicalMapper ..> Encounter : validates blockers
+
+@enduml
+
